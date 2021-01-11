@@ -1,0 +1,220 @@
+skill,check_line,backward_text
+Acrobatics,,Freeing yourself from grapples and the like
+Acrobatics,,Squeezing through tight spaces without losing movement
+Acrobatics,,Balancing on thin/fragile surfaces without falling
+Acrobatics,,Landing on your feet after a fall
+Acrobatics,,"Ignoring falling damage, such as falling from a cart"
+Acrobatics,,Tumbling
+Acrobatics,,Moving on a Narrow Surface
+Acrobatics,,Charging or Running on a Difficult Surface
+Acrobatics,,Moving through Trees
+Acrobatics,,Moving Along an Unstable Surface
+Acrobatics,,Moving Shipboard
+Acrobatics,,Escape from Restraint
+Acrobatics,,Reduce Damage from a Fall
+Animal Handling,,Handle an Animal
+Animal Handling,,Push an Animal
+Animal Handling,,Rear a Wild Animal
+Animal Handling,,Calm an Animal
+Animal Handling,,Teach an Animal a Trick
+Animal Handling,,Train an Animal for a Purpose
+Animal Handling,,Ride
+Animal Handling,,Guide with Knees
+Animal Handling,,Stay in Saddle
+Animal Handling,,Use Mount as Cover
+Animal Handling,,Soft Fall
+Animal Handling,,Spur Mount
+Animal Handling,,Control Mount in Battle
+Animal Handling,,Leap
+Animal Handling,,Fast Mount or Dismount
+Animal Handling,,Calm an Animal
+Animal Handling,,Swim a Mount
+Animal Handling,,"Can calm down a domesticated animal, keep a mount from getting spooked, or intuit an animal's intentions, the GM might call for a Wisdom (Animal Handling) check. You also make a Wisdom (Animal Handling) check to control your mount when you attempt a risky maneuver."
+Stealth,,Hiding
+Stealth,,Moving without being heard
+Stealth,,Mingling in a crowd
+Stealth,,Following someone
+Stealth,,Avoid Being Seen
+Stealth,,Sniping
+Stealth,,Blend into a Crowd
+Stealth,,Move between Cover
+Stealth,,Tailing Someone
+Stealth,,Move Silently
+Survival,,Tracking
+Survival,,Foraging food
+Survival,,Hunting wild game
+Survival,,Protecting yourself from weather/terrain hazards such as sunburn and mosquitoes
+Survival,,Finding water
+Survival,,Knowing which way is north
+Survival,,Avoid getting lost
+Survival,,Making a decent campsite in extreme conditions
+Survival,,Setting a Course
+Survival,,Finding Resources
+Survival,,Determine Time until Spoilage
+Survival,,Surviving in the Wild
+Survival,,Making Camp
+Survival,,Trailblazing
+Survival,,Locate North
+Survival,,Creating a Trail Sign
+Survival,,Finding a Trail Sign
+Survival,,Reading a Trail Sign
+Survival,,Finding Parts for a Booby Trap
+Survival,,Harvest Poisonmaking Materials
+Survival,,"Follow tracks, hunt wild game, guide your group through frozen wastelands, identify signs that owlbears live nearby, predict the weather, or avoid quicksand and other natural hazards."
+Religion,,"Recalling lore about deities, temples and rituals"
+Religion,,Performing a ritual according to specification
+Religion,,Knowing what would be offensive to a certain faith
+Religion,,Know about Religion
+Religion,,Know about Undead
+Religion,,Find Your Way around Church
+Religion,,"Recall lore about deities, rites and prayers, religious hierarchies, holy symbols, and the practices of secret cults.ecall lore about deities, rites and prayers, religious hierarchies, holy symbols, and the practices of secret cults."
+Sleight of Hand,,Stealing from people without being noticed
+Sleight of Hand,,Juggling
+Sleight of Hand,,Putting something on someone without being noticed
+Sleight of Hand,,Picking a weapon from the air
+Sleight of Hand,,Concealing belongings in yourself
+Sleight of Hand,,Performing gestures or messages without being noticed
+Sleight of Hand,,Palm Object
+Sleight of Hand,,Conceal Object
+Sleight of Hand,,Steal Object
+Sleight of Hand,,Tie a Knot
+Performance,,Singing
+Performance,,Dancing
+Performance,,Telling stories
+Performance,,Delivering a good speech
+Performance,,Impersonate
+Performance,,Put on a Gladiatorial Performance
+Performance,,Put on a Show
+Performance,,"Delight an audience with music, dance, acting, storytelling, or some other form of entertainment."
+Persuasion,,Convincing someone to do what you want
+Persuasion,,Debating
+Persuasion,,Knowing how to behave in a given social setting
+Persuasion,,Flattering someone
+Persuasion,,Seducing someone
+Persuasion,,Change Attitude
+Persuasion,,Mediate
+Persuasion,,Haggle
+Persuasion,,Direct a Crowd
+Persuasion,,Find Your Way around Court
+Persuasion,,"Foster friendships, make cordial requests, or exhibit proper etiquette. Examples of persuading others include convincing a chamberlain to let your party see the king, negotiating peace between warring tribes, or inspiring a crowd of townsfolk."
+Nature,,"Recalling lore about beasts, plants, terrain, types of vegetation and weather"
+Nature,,Knowing what plants are needed to make certain compounds/potions
+Nature,,Identifying poisonous/dangerous food
+Nature,,Harvesting poisons from plants/beasts
+Nature,,Detecting strange weather changes
+Nature,,Know about Geography
+Nature,,Know about Nature
+Nature,,"Know about Animals, Fey, Giants, Monstrous Humanoids, Plants and Vermin"
+Nature,,"Recall lore about terrain, plants and animals, the weather, and natural cycles."
+Perception,,Spotting/hearing hidden threats
+Perception,,Recognizing someone who's far away
+Perception,,Finding minute details
+Perception,,Identifying a noise's source
+Perception,,Hear a Sound
+Perception,,Eavesdrop
+Perception,,Observe Creature
+Perception,,Read Lips
+Perception,,Spotting
+Perception,,"Spot, hear, or otherwise detect the presence of something. It measures your general awareness of your surroundings and the keenness of your senses. For example, you might try to hear a conversation through a closed door, eavesdrop under an open window, or hear monsters moving stealthily in the forest. Or you might try to spot things that are obscured or easy to miss, whether they are orcs lying in ambush on a road, thugs hiding in the shadows of an alley, or candlelight under a closed secret door."
+Investigation,,Searching someone or an area
+Investigation,,Seeing through illusions
+Investigation,,Finding more about rumors
+Investigation,,Locating someone in an urban environment
+Investigation,,Searching for specific information in books/libraries
+Investigation,,Search an Area
+Investigation,,Frisk a Person
+Investigation,,Determine an Object’s Function
+Investigation,,Finding a Trail Sign
+Medicine,,Stabilizing someone
+Medicine,,Noticing a certain disease in someome
+Medicine,,Providing long-term treatment
+Medicine,,Knowing the body's limits related to a certain physical activity
+Medicine,,Knowing the dosages and uses for natural healing items
+Medicine,,"Dissecting a body, or removing something from it"
+Medicine,,First Aid
+Medicine,,Long-Term Care
+Medicine,,Treat Movement Injury
+Medicine,,Treat Disease
+Medicine,,Treat Poison
+Medicine,,Determine Cause of Death
+Medicine,,Estabilize a dying companion or diagnose an illness.
+Insight,,Identifying whether someone is being deceitful or evasive in answering
+Insight,,Noticing what a person plans by what they're doing
+Insight,,Telling if someone is following you rather than just going in the same direction
+Insight,,Perceiving if someone is being mentally dominated
+Insight,,Getting the meaning of underlying messages
+Insight,,Avoid being Bluffed
+Insight,,Hunch
+Insight,,Sense Enchantment
+Insight,,Discern Secret Message
+Insight,,Assess Opponent
+Insight,,Penetrate Disguise
+Insight,,"Determine the true intentions of a creature, such as when searching out a lie or predicting someone's next move. Doing so involves gleaning clues from body language, speech habits, and changes in mannerisms."
+Intimidation,,Intimidating (duh) someone into doing what you want
+Intimidation,,Torturing someone
+Intimidation,,Taunting someone into violence
+Intimidation,,Change Attitude
+Intimidation,,Demoralize Opponent
+Intimidation,,Direct a Crowd
+Intimidation,,"Pry information out of a prisoner, convincing street thugs to back down from a confrontation, or using the edge of a broken bottle to convince a sneering vizier to reconsider a decision. pry information out of a prisoner, convincing street thugs to back down from a confrontation, or using the edge of a broken bottle to convince a sneering vizier to reconsider a decision."
+Deception,,Lying (duh)
+Deception,,Fake crying
+Deception,,Disguise emotions (such as pretending to like seeing a man tortured)
+Deception,,Playing dead
+Deception,,Passing yourself for someone else
+Deception,,Being cool' if seen while following someone
+Deception,,Fast Talking or Misdirection
+Deception,,Feinting in Combat
+Deception,,Create a Diversion in Order to Hide
+Deception,,Appear Innocuous
+Deception,,Delivering a Secret Message
+Deception,,Heckle
+Deception,,"Hide the truth, either verbally or through your actions. This deception can encompass everything from misleading others through ambiguity to telling outright lies. Typical situations include trying to fast-talk a guard, con a merchant, earn money through gambling, pass yourself off in a disguise, dull someone's suspicions with false assurances, or maintain a straight face while telling a blatant lie."
+History,,"Recalling lore about families, events, places and heraldry"
+History,,Remembering anniversaries of important happenings
+History,,Telling when/where a certain item was made
+History,,Noticing a person's origins based on their looks or customs
+History,,Know about History
+History,,Deducing a Command Word
+History,,Know about the Nearby Area
+History,,Know about Local Humanoids
+History,,Interpret Tribal Tattoos
+History,,Know about Nobility and Royalty
+History,,"Recall lore about historical events, legendary people, ancient kingdoms, past disputes, recent wars, and lost civilizations."
+Arcana,,Recall lore about magic items and spells
+Arcana,,"Recognizing the functions of magic accessories, such as a wizard's spellbook or a warlock's tome"
+Arcana,,Identifying a spell in a scroll/book
+Arcana,,"Controlling a wild magic item/effect, such as a Sphere of Annihilation"
+Arcana,,Disarming magic traps
+Arcana,,Understanding properties of spells cast by others
+Arcana,,Identifying spells being cast
+Arcana,,Know about Arcana
+Arcana,,"Know about Constructs, Dragons, or Magical Beasts"
+Arcana,,Deducing a Command Word
+Arcana,,Know about the Planes
+Arcana,,Know about Elementals & Outsiders
+Arcana,,Identify Magic Effect
+Arcana,,"Recall lore about spells, magic items, eldritch symbols, magical traditions, the planes of existence, and the inhabitants of those planes."
+Athletics,,Shoving creatures
+Athletics,,Grappling creatures
+Athletics,,"Going through rough terrain, such as stairs, without losing movement"
+Athletics,,Jumping a certain height/distance
+Athletics,,Swimming in rough currents/in heavy armor
+Athletics,,Acting in mid-air
+Athletics,,Climb Wall or Cliff
+Athletics,,Create Handholds
+Athletics,,Climb Tree
+Athletics,,Rapelling
+Athletics,,Hop Up
+Athletics,,Jump Down
+Athletics,,Long Jump
+Athletics,,High Jump
+Athletics,,Swimming High Jump
+Athletics,,Swim
+Athletics,,Dive
+Athletics,,Grapple
+Athletics,,Disarming
+Athletics,,Trip
+Athletics,,"You attempt to climb a sheer or slippery cliff, avoid hazards while scaling a wall, or cling to a surface while something is trying to knock you off."
+Athletics,,You try to jump an unusually long distance or pull off a stunt midjump.
+Athletics,,"You struggle to swim or stay afloat in treacherous currents, storm-­‐‑tossed waves, or areas of thick seaweed. Or another creature tries to push or pull you underwater or otherwise interfere with your swimming."

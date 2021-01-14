@@ -1,0 +1,86 @@
+Classes,,,Other System Skills,5E Skill Proficiency
+Charisma-Deception,,,Climb,Strength-Athletics
+Charisma-Intimidation,,,Balance,Dexterity-Acrobatics
+Charisma-Performance,,,Sleight of Hand,Dexterity-Sleight of Hand
+Charisma-Persuasion,,,Hide,Dexterity-Stealth
+Charisma-Save,,,Knowledge (arcana),Intelligence-Arcana
+Dexterity-Acrobatics,,,Knowledge (nobility and royalty),Intelligence-History
+Dexterity-Save,,,Gather Information,Intelligence-Investigation
+Dexterity-Sleight of Hand,,,Knowledge (nature),Intelligence-Nature
+Dexterity-Stealth,,,Knowledge (religion),Intelligence-Religion
+Intelligence-Arcana,,,Ride,Wisdom-Animal Handling
+Intelligence-History,,,Sense Motive,Wisdom-Insight
+Intelligence-Investigation,,,Heal,Wisdom-Medicine
+Intelligence-Nature,,,Spot,Wisdom-Perception
+Intelligence-Religion,,,Survival,Wisdom-Survival
+Intelligence-Save,,,Bluff,Charisma-Deception
+Strength-Athletics,,,Intimidate,Charisma-Intimidation
+Strength-Save,,,Perform,Charisma-Performance
+Wisdom-Animal Handling,,,Diplomacy,Charisma-Persuasion
+Wisdom-Insight,,,Swim,Strength-Athletics
+Wisdom-Medicine,,,Jump,Strength-Athletics
+Wisdom-Perception,,,Tumble,Dexterity-Acrobatics
+Wisdom-Save,,,Move Silently,Dexterity-Stealth
+Wisdom-Survival,,,Spellcraft,Intelligence-Arcana
+Attack Roll,,,Knowledge (planes),Intelligence-Arcana
+Roll Initiative,,,Knowledge (history),Intelligence-History
+Death Save,,,Knowledge (local),Intelligence-History
+Damage,,,Search,Intelligence-Investigation
+Strength,,,Handle Animal,Wisdom-Animal Handling
+Dexterity,,,Listen,Wisdom-Perception
+Intelligence,,,Disguise,Disguise Kit 
+Wisdom,,,Open Lock,Thieves' tools
+Charisma,,,Forgery,Smith's tools 
+Alchemist's supplies,,,Knowledge (geography),Nature (Intelligence)
+Brewer's supplies ,,,Disable Device,Thieves' tools
+Calligrapher's supplies ,,,Escape Artist,Acrobatics (Dexterity)
+Carpenter's tools ,,,Decipher Script,Calligrapher's supplies 
+Cartographer's tools ,,,Craft(Alchemy),Alchemist's supplies
+Cobbler's tools ,,,Craft(Armorsmithing),Smith's tools 
+Cook's utensils ,,,Craft(Boat building),Woodcarver's tools 
+Glassblower's tools ,,,Craft(Bookbinding),Leatherworker's tools 
+Jeweler's tools ,,,Craft(Bowmaking),Woodcarver's tools 
+Leatherworker's tools ,,,Craft(Blacksmithing),Smith's tools 
+Mason's tools ,,,Craft(Calligraphy),Calligrapher's supplies 
+Painter's supplies ,,,Craft(Carpentry),Woodcarver's tools 
+Potter's tools ,,,Craft(Painting),Painter's supplies 
+Smith's tools ,,,Craft(Playwright),Charisma-Performance
+Tinker's tools ,,,Craft(Poisonmaking),Poisoner's Kit
+Weaver's tools ,,,Craft(Tattoo’ing),Wisdom-Medicine
+Woodcarver's tools ,,,Craft(Cobbling),Mason's tools 
+Disguise Kit ,,,Craft(Composing),Charisma-Performance
+Forgery kit ,,,Craft(Leatherworking),Leatherworker's tools 
+Thieves' tools,,,Craft(Locksmithing),Tinker's tools 
+Herbalism Kit,,,Craft(Pottery),Mason's tools 
+Navigator's Tools,,,Craft(Gemcutting),Jeweler's tools 
+Poisoner's Kit,,,Craft(Stonecarving),Mason's tools 
+Constitution,,,Craft(Stonemasonry),Mason's tools 
+,,,Craft(Trapmaking),Tinker's tools 
+,,,Craft(Weaponsmithing),Smith's tools 
+,,,Craft(Shipmaking),Woodcarver's tools 
+,,,Craft(Weaving),Weaver's tools 
+,,,Craft(Sculpture),Mason's tools 
+,,,Craft(Woodcarving),Woodcarver's tools 
+,,,Profession(Apothecary),Alchemist's supplies
+,,,Profession(Astrologist),Intelligence-History
+,,,Profession(Brewer),Brewer's supplies 
+,,,Profession(Cook),Cook's utensils 
+,,,Profession(Lumberjack),Woodcarver's tools 
+,,,Profession(Herbalist),Herbalism Kit
+,,,Profession(Scribe),Calligrapher's supplies 
+,,,Profession(Miner),Mason's tools 
+,,,Profession(Woodcutter),Woodcarver's tools 
+,,,Profession(Engineer),Tinker's tools 
+,,,Knowledge (architecture & engineering),Mason's tools 
+,,,Reflex Save,Dexterity-Save
+,,,Will Save,Wisdom-Save
+,,,Fortitude Save,Constitution-Save
+,,,Reflex Saving Throw,Dexterity-Save
+,,,Will Saving Throw,Wisdom-Save
+,,,Fortitude Saving Throw,Constitution-Save
+,,,Occultism,Intelligence-Arcana
+,,,Society,Intelligence-History
+,,,Thievery,Thieves' tools
+,,,Old Lore,Intelligence-History
+,,,Finesse,Dexterity-Sleight of Hand
+,,,Persuade,Charisma-Persuasion

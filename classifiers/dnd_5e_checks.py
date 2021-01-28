@@ -1,5 +1,25 @@
 import pandas as pd
-from skills_5e import skills
+
+skills = [
+  'Deception',
+  'Intimidation',
+  'Performance',
+  'Persuasion',
+  'Acrobatics',
+  'Sleight of Hand',
+  'Stealth',
+  'Arcana',
+  'History',
+  'Investigation',
+  'Nature',
+  'Religion',
+  'Athletics',
+  'Animal Handling',
+  'Insight',
+  'Medicine',
+  'Perception',
+  'Survival'
+  ]
 
 df_critical_role = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.txt', sep=';', error_bad_lines=False)
 df_tavern_keeper = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv')
@@ -96,7 +116,7 @@ df['train_text'] = df['backward_text'].apply(tokenize)
 
 
 # Amostra estratificada com reposição >> Risco de viciar o modelo
-df_estrat = df.groupby('skill').apply(pd.DataFrame.sample, n=300, replace=True).reset_index(drop=True)
+df_estrat = df.groupby('skill').apply(pd.DataFrame.sample, n=500, replace=True).reset_index(drop=True)
 
 # Descomentar quando a massa de dados tiver mais que 300 exemplos de cada skill
 #df_estrat = df.groupby('skill').apply(pd.DataFrame.sample, n=300).reset_index(drop=True)

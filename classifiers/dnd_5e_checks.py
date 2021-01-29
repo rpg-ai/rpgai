@@ -21,12 +21,14 @@ skills = [
   'Survival'
   ]
 
+"""
+Os erros de importação parecem ser devidos a ; no texto remover os separadores no scrapper
+"""
 df_critical_role = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.txt', sep=';', error_bad_lines=False)
 df_tavern_keeper = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv')
 
 # Filtrando o dataset do Tavern Keeper apenas pelas skills 5e e salvando em uma cópia
 df_tavern_keeper_5e = df_tavern_keeper[df_tavern_keeper['skill'].isin(skills)].copy()
-
 
 # Seleciona origem do treinamento
 df_critical_role['origin'] = 'CR'
@@ -128,6 +130,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import LinearSVC
+from xgboost import XGBClassifier
 
 # Split dos dados em treino e validação
 X_train, X_test, y_train, y_test = train_test_split(df_estrat['train_text'], df_estrat['skill'], random_state = 0)
@@ -153,13 +156,44 @@ tfidf_transformer = TfidfTransformer()
 X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
 
 # Treinando o modelo
-clf = LinearSVC().fit(X_train_tfidf, y_train)
+clf = LinearSVC()
+#clf = XGBClassifier(objective = 'binary:logistic')
+clf = clf.fit(X_train_tfidf, y_train)
 
 y_pred = clf.predict(count_vect.transform(X_test))
 
 from sklearn import metrics
-print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+import numpy as np
+print(f"Accuracy: {metrics.accuracy_score(y_test, y_pred):.2%}")
 
+"""
+Check some cases to analyze the model
+"""
+acrobatics = 'seeing his princess wrap a black cord he says, oh this is gonna be fun, much appreciated.  "Metal, second verse same as the first " as he tumbles behind the next living spell '
+athletics = 'ASHLEY: Right, okay. MATT: That finishes its turn. Beau, you are up. You watch Yasha slam on the ground, unconscious next to you, the blade clattering to the ground and coming to rest. The creature lifts up (wheezing) and vanishes into the stone above you. MARISHA: I can not get a reaction from it, as it goes? MATT: It was not close enough to you, unfortunately. MARISHA: Fuck. Im going to run over to this bookcase and put my staff behind it to see if I can knock it over. MATT: You get the staff on the fulcrum.'
+survival = 'Thanks to Halbarad s advice and map, Ren felt prepared for the route they would take on the journey.'
+insight = 'Will pay keen attention to read into any suggestion of how the news is presented to Thorin  and how welcome it is to him. Zaken has a sneaky feeling that Thorin has something lingering in his mind  from the meeting they had yesterday anyway.'
+religion = 'i try recognize the holy symbol'
+acrobatics2 = 'you tumble the strike'
+
+# Skill Check to test
+skill_test = survival
+skill_test = tokenize(skill_test.lower())
+y_pred = clf.predict(count_vect.transform([skill_test]))
+y_pred_prob = clf.predict_proba(count_vect.transform([skill_test]))
+
+# Print best 3 matches
+n = 3
+best_n = np.argsort(y_pred_prob, axis=1)[:,-n:]
+classes = clf.classes_
+print(y_pred[0])
+print(f'First predicted class = {classes[best_n[0, 2]]} and confidence = {y_pred_prob[0, best_n[0, 2]]:.2%}')
+print(f'Second predicted class = {classes[best_n[0, 1]]} and confidence = {y_pred_prob[0, best_n[0, 1]]:.2%}')
+print(f'Third predicted class = {classes[best_n[0, 0]]} and confidence = {y_pred_prob[0, best_n[0, 0]]:.2%}')
+
+"""
+Wordclouds Analysis to identify stopwords and outliers
+"""
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 

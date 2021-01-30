@@ -1,168 +1,133 @@
 import pandas as pd
+import re
+import spacy
 
-skills = [
-  'Deception',
-  'Intimidation',
-  'Performance',
-  'Persuasion',
-  'Acrobatics',
-  'Sleight of Hand',
-  'Stealth',
-  'Arcana',
-  'History',
-  'Investigation',
-  'Nature',
-  'Religion',
-  'Athletics',
-  'Animal Handling',
-  'Insight',
-  'Medicine',
-  'Perception',
-  'Survival'
-  ]
+from unidecode import unidecode
 
+skills = ['Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception', 'History',
+          'Insight', 'Intimidation', 'Investigation', 'Medicine', 'Nature', 'Perception',
+          'Performance', 'Persuasion', 'Religion', 'Sleight of Hand', 'Stealth', 'Survival'
+         ]
 
-df_critical_role = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.csv')
-df_tavern_keeper = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv')
+"""
+Os erros de importação parecem ser devidos a ; no texto remover os separadores no scrapper
+"""
+CR_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.txt'
+TK_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv'
+SS_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/skill_db.csv'
 
-# Filtrando o dataset do Tavern Keeper apenas pelas skills 5e e salvando em uma cópia
+fields = {'skill', 'backward_text'}
+
+df_critical_role = pd.read_csv(CR_url, sep=';', error_bad_lines=False, usecols=fields)
+df_tavern_keeper = pd.read_csv(TK_url, usecols=fields)
+df_skill_sheet = pd.read_csv(SS_url, usecols=fields)
+
+# Filters only dnd 5e valid skills
 df_tavern_keeper_5e = df_tavern_keeper[df_tavern_keeper['skill'].isin(skills)].copy()
 
-# Seleciona origem do treinamento
+# Flag data source
 df_critical_role['origin'] = 'CR'
 df_tavern_keeper_5e['origin'] = 'TK'
+df_skill_sheet['origin'] = 'SS'
 
-# Juntando em um unico data frame
-list_df = [df_critical_role, df_tavern_keeper_5e]
-df = pd.DataFrame(columns=['skill', 'check_line', 'backward_text', 'origin'])
-df = df.append(list_df, ignore_index=True)
+"""
+DEBUG - Alguma fonte de dados está zoada!!!
+df_tavern_keeper_5e >> Está com dados zoados >> prejudica o modelo
+df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
+"""
+# Append all dataframes
+#list_df = [df_critical_role, df_tavern_keeper_5e]
+list_df = [df_critical_role]
+df = df_skill_sheet.append(list_df, ignore_index=True)
 
-# Sem essa conversão, acontece um erro na hora de remover as stop words
-df['backward_text'] = df['backward_text'].astype(str)
-df['backward_text'] = df['backward_text'].str.lower()
+# Cleans text from processing and tokenizing
+def strip_nonalpha(text):
+    text = text.lower()
+    t = unidecode(text)
+    t.encode("ascii")  
+    t = re.sub(r'[^a-z]', ' ', t)           #Remove nonalpha
+    t = re.sub(r'\s[^a-z]\s', ' ', t)       #Remove nonalpha >> check if is really necessary!?!?
+    t = re.sub(r"\b[a-z]{1,2}\b", ' ', t)   #Remove words with 1 or 2 letters
+    t = re.sub(' +', ' ', t)                #Remove extra spaces
+    t = t.strip()                           #Remove leading and trailing spaces
+    return t
 
-import spacy
+# Drop rows without text for model
+df = df.dropna()
+
+# Cleans text
+df['clean_text'] = df['backward_text'].apply(strip_nonalpha)
+
+df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
 
 nlp = spacy.load("en_core_web_sm")
 
-# Remove palavras muito comuns
-nlp.vocab["going"].is_stop = True
-nlp.vocab["right"].is_stop = True
-nlp.vocab["okay"].is_stop = True
-nlp.vocab["yeah"].is_stop = True
-nlp.vocab["want"].is_stop = True
-nlp.vocab["try"].is_stop = True
-nlp.vocab["gonna"].is_stop = True
-nlp.vocab["good"].is_stop = True
-nlp.vocab["yes"].is_stop = True
-nlp.vocab["no"].is_stop = True
-nlp.vocab["oh"].is_stop = True
-nlp.vocab["look"].is_stop = True
-nlp.vocab["know"].is_stop = True
-nlp.vocab["way"].is_stop = True
-nlp.vocab["looks"].is_stop = True
-nlp.vocab["guy"].is_stop = True
-nlp.vocab["little"].is_stop = True
-nlp.vocab["check"].is_stop = True
-nlp.vocab["thin"].is_stop = True
-nlp.vocab["thing"].is_stop = True
-nlp.vocab["guys"].is_stop = True
-nlp.vocab["come"].is_stop = True
-nlp.vocab["roll"].is_stop = True
-nlp.vocab["let"].is_stop = True
-nlp.vocab["time"].is_stop = True
-nlp.vocab["got"].is_stop = True
-nlp.vocab["goes"].is_stop = True
-nlp.vocab["maybe"].is_stop = True
+new_stopwords = {
+                #Common words
+                "going", "right", "okay", "yeah", "want", "try", "gonna", "good", "yes", "look", "know", "way", "looks", "guy",
+                "little", "check", "thin", "thing", "guys", "come", "roll", "let", "time", "got", "goes", "maybe", 
+                #PCs and NPCs Names
+                "jester", "caleb", "nott", "fjord", "yasha", "beau", "matt", "sam", "travis", "marisha", "ashley", "laura", 
+                "liam", "professor", "thaddeus", "taliesin", "mollymauk", "grog", "pike"
+                }
 
-# Remove nome dos players e personagens
-nlp.vocab["jester"].is_stop = True
-nlp.vocab["caleb"].is_stop = True
-nlp.vocab["nott"].is_stop = True
-nlp.vocab["fjord"].is_stop = True
-nlp.vocab["yasha"].is_stop = True
-nlp.vocab["beau"].is_stop = True
-nlp.vocab["matt"].is_stop = True
-nlp.vocab["sam"].is_stop = True
-nlp.vocab["travis"].is_stop = True
-nlp.vocab["marisha"].is_stop = True
-nlp.vocab["ashley"].is_stop = True
-nlp.vocab["laura"].is_stop = True
-nlp.vocab["liam"].is_stop = True
-nlp.vocab["professor"].is_stop = True
-nlp.vocab["thaddeus"].is_stop = True
-nlp.vocab["taliesin"].is_stop = True
-nlp.vocab["mollymauk"].is_stop = True
-nlp.vocab["grog"].is_stop = True
-nlp.vocab["pike"].is_stop = True
+stopwords = spacy.lang.en.stop_words.STOP_WORDS
+stopwords.update(new_stopwords)
 
-import re
-
+"""
+Try options with lemma and stem
+"""
 def tokenize(str_text):
-
-  # Manter apenas palavras
-  words = re.sub(r"[^a-z]", ' ', str_text)
-  # Remove palavras menores que 2 letras
-  words = re.sub(r"\b[a-z]{1,2}\b", ' ', words)
-
-  doc = nlp(words)
-  # Remove stop Words, pontuação, mantendo apenas verbos e substantivos
-  tokens = [token.text for token in doc if (not token.is_stop | token.is_punct) and token.pos_ == 'VERB' or token.pos_ == 'NOUN']
+  doc = nlp(str_text)
+  # Remove stop Words, keeps verbs and nouns
+  tokens = [token.text for token in doc if (not token.is_stop) and token.pos_ == 'VERB' or token.pos_ == 'NOUN']
   
   return ' '.join(tokens)
 
+df['train_text'] = df['clean_text'].apply(tokenize)
 
-df['train_text'] = df['backward_text'].apply(tokenize)
+# Check data distribution per skill
+df.skill.value_counts()
 
+# Do an oversampling to try to get better prediction
+df_estrat = df.groupby('skill').apply(pd.DataFrame.sample, n=400, replace=True).reset_index(drop=True)
 
-# Amostra estratificada com reposição >> Risco de viciar o modelo
-df_estrat = df.groupby('skill').apply(pd.DataFrame.sample, n=500, replace=True).reset_index(drop=True)
-
-# Descomentar quando a massa de dados tiver mais que 300 exemplos de cada skill
-#df_estrat = df.groupby('skill').apply(pd.DataFrame.sample, n=300).reset_index(drop=True)
-
-#Treinando o modelo ------------------------
-
+# Model Train and Selection
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 from xgboost import XGBClassifier
-
-# Split dos dados em treino e validação
-X_train, X_test, y_train, y_test = train_test_split(df_estrat['train_text'], df_estrat['skill'], random_state = 0)
-
-#Adicionando as ações da planilha a base de treinamento
-df_skill_sheet = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/skill_db.csv')
-df_skill_sheet['origin'] = 'SS'
-
-df_skill_sheet['backward_text'] = df_skill_sheet['backward_text'].astype(str)
-df_skill_sheet['backward_text'] = df_skill_sheet['backward_text'].str.lower()
-
-df_skill_sheet['train_text'] = df['backward_text'].apply(tokenize)
-
-X_train = X_train.append(df_skill_sheet['train_text'])
-y_train = y_train.append(df_skill_sheet['skill'])
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+import numpy as np
 
 # Bag of words
 count_vect = CountVectorizer()
-X_train_counts = count_vect.fit_transform(X_train)
-
-# Transformando o bag of words em um tf-idf
+bow = count_vect.fit_transform(df_estrat['train_text'])
+# tf-idf
 tfidf_transformer = TfidfTransformer()
-X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
+bow_tfidf = tfidf_transformer.fit_transform(bow)
 
-# Treinando o modelo
-clf = LinearSVC()
+# split data for train and test
+X_train, X_test, y_train, y_test = train_test_split(bow_tfidf, df_estrat['skill'], test_size=0.25, random_state = 42)
+
+# Train Model
+#clf = LinearSVC()
 #clf = XGBClassifier(objective = 'binary:logistic')
-clf = clf.fit(X_train_tfidf, y_train)
+#clf = SVC() 
+#clf.probability=True
+clf = RandomForestClassifier(n_estimators=100)
+clf = clf.fit(X_train, y_train)
 
-y_pred = clf.predict(count_vect.transform(X_test))
+y_pred = clf.predict(X_test)
 
-from sklearn import metrics
-import numpy as np
+print(confusion_matrix(y_test, y_pred))
+
 print(f"Accuracy: {metrics.accuracy_score(y_test, y_pred):.2%}")
+print(f"Precision: {metrics.precision_score(y_test, y_pred, average='macro'):.2%}")
 
 """
 Check some cases to analyze the model
@@ -174,23 +139,40 @@ insight = 'Will pay keen attention to read into any suggestion of how the news i
 religion = 'i try recognize the holy symbol'
 acrobatics2 = 'you tumble the strike'
 
-# Skill Check to test
-skill_test = survival
-skill_test = tokenize(skill_test.lower())
-y_pred = clf.predict(count_vect.transform([skill_test]))
-y_pred_prob = clf.predict_proba(count_vect.transform([skill_test]))
+def check_for_skill(skill_name, skill, n):
+    skill_test = tokenize(strip_nonalpha(skill))
+    y_valid = clf.predict(count_vect.transform([skill_test]))
+    y_valid_prob = clf.predict_proba(count_vect.transform([skill_test]))
+    
+    # Print best n matches
+    best_n = np.argsort(y_valid_prob, axis=1)[:,-n:]
+    classes = clf.classes_
+    print(f'Expected: {skill_name}')
+    print(f'Predicted: {y_valid[0]}')
+    
+    # TO DO >>> Loop the n options >> need to do !!!
+    print(f'First predicted class = {classes[best_n[0, 2]]} and confidence = {y_valid_prob[0, best_n[0, 2]]:.2%}')
+    print(f'Second predicted class = {classes[best_n[0, 1]]} and confidence = {y_valid_prob[0, best_n[0, 1]]:.2%}')
+    print(f'Third predicted class = {classes[best_n[0, 0]]} and confidence = {y_valid_prob[0, best_n[0, 0]]:.2%}')
+    return y_valid
 
-# Print best 3 matches
-n = 3
-best_n = np.argsort(y_pred_prob, axis=1)[:,-n:]
-classes = clf.classes_
-print(y_pred[0])
-print(f'First predicted class = {classes[best_n[0, 2]]} and confidence = {y_pred_prob[0, best_n[0, 2]]:.2%}')
-print(f'Second predicted class = {classes[best_n[0, 1]]} and confidence = {y_pred_prob[0, best_n[0, 1]]:.2%}')
-print(f'Third predicted class = {classes[best_n[0, 0]]} and confidence = {y_pred_prob[0, best_n[0, 0]]:.2%}')
+# Skill Check to validate
+skill_to_check = check_for_skill('acrobatics2', acrobatics2, 3)
+
+
+
+
+
+
 
 """
 Wordclouds Analysis to identify stopwords and outliers
+
+TO DO >> Improve the data analysis
+
+This code part should happen before modeling
+
+
 """
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt

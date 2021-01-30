@@ -162,30 +162,12 @@ skill_to_check = check_for_skill('acrobatics2', acrobatics2, 3)
 
 
 
-
-
-
 """
-Wordclouds Analysis to identify stopwords and outliers
 
 TO DO >> Improve the data analysis
 
-This code part should happen before modeling
-
 
 """
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
-
-def print_wordcloud(skill_name):
-  skills_backward = df[df['skill'] == skill_name]
-  document = ' '.join(skills_backward['train_text'])
-
-  wordcloud = WordCloud(background_color="white").generate(document)
-  plt.figure(figsize=(10,10))
-  plt.imshow(wordcloud, interpolation='bilinear')
-  plt.axis("off")
-  print(skill_name)
 
 def BOW(skill_name):
   skills_backward = df[df['skill'] == skill_name]

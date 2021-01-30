@@ -21,10 +21,8 @@ skills = [
   'Survival'
   ]
 
-"""
-Os erros de importação parecem ser devidos a ; no texto remover os separadores no scrapper
-"""
-df_critical_role = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.txt', sep=';', error_bad_lines=False)
+
+df_critical_role = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.csv')
 df_tavern_keeper = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv')
 
 # Filtrando o dataset do Tavern Keeper apenas pelas skills 5e e salvando em uma cópia

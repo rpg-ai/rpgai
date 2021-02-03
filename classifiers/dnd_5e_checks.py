@@ -4,26 +4,15 @@ import spacy
 
 from unidecode import unidecode
 
-skills = ['Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception', 'History',
-          'Insight', 'Intimidation', 'Investigation', 'Medicine', 'Nature', 'Perception',
-          'Performance', 'Persuasion', 'Religion', 'Sleight of Hand', 'Stealth', 'Survival'
-         ]
-
-"""
-Os erros de importação parecem ser devidos a ; no texto remover os separadores no scrapper
-"""
-CR_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.txt'
+CR_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.csv'
 TK_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv'
 SS_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/skill_db.csv'
 
 fields = {'skill', 'backward_text'}
 
-df_critical_role = pd.read_csv(CR_url, sep=';', error_bad_lines=False, usecols=fields)
-df_tavern_keeper = pd.read_csv(TK_url, usecols=fields)
+df_critical_role = pd.read_csv(CR_url, usecols=fields)
+df_tavern_keeper_5e = pd.read_csv(TK_url, usecols=fields)
 df_skill_sheet = pd.read_csv(SS_url, usecols=fields)
-
-# Filters only dnd 5e valid skills
-df_tavern_keeper_5e = df_tavern_keeper[df_tavern_keeper['skill'].isin(skills)].copy()
 
 # Flag data source
 df_critical_role['origin'] = 'CR'

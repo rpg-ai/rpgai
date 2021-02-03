@@ -4,11 +4,6 @@ import pandas as pd
 
 df_checks = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/5e_skills_dict.csv')
 
-# Adicionando alguns testes que ficaram faltando
-df_extra = pd.DataFrame([['Travel', 'Survival'], ['Explore', 'Survival'], ['Investigate', 'Investigation']], columns=['text_skill', '5e_skill'])
-df_checks = df_checks.append(df_extra, ignore_index=True)
-
-
 # fonte do código: https://stackoverflow.com/questions/8153823/how-to-fix-this-attributeerror
 from html.parser import HTMLParser
 
@@ -47,17 +42,14 @@ def remove_char_names(text):
 # Retorna o nome da skill no DnD 5e com base no dicionário
 def get_5e_skill_name(old_skill_name): 
   
-  # Evita um erro no regex interno do python https://stackoverflow.com/questions/3675144/regex-error-nothing-to-repeat
-  #old_skill_name = old_skill_name.replace('+', '').replace('*', '')
-  # Evita o error: unbalanced parenthesis at position 1
-  #old_skill_name = old_skill_name.replace(')', ' ').replace('(', '')
-  #Evita o error: error: bad escape \P at position 5
-  #old_skill_name = old_skill_name.replace('\\', ' ') 
-  
   # Manter apenas palavras
   old_skill_name = re.sub(r"[^a-z]", ' ', old_skill_name.lower())
-
-  df_skill = df_checks.loc[df_checks['text_skill'].str.contains(old_skill_name, case=False)]
+  
+  """
+    Using a regex pattern in contains to get a whole world, not a sequence of characters
+    The Craft check was return Arcana because 'Spellcraft' contains 'craft' before this modification
+  """
+  df_skill = df_checks.loc[df_checks['text_skill'].str.contains(re.compile(r'\b({0})\b'.format(old_skill_name), flags=re.IGNORECASE))]
   return old_skill_name if df_skill.empty else df_skill.iloc[0]['5e_skill']
 
 
@@ -66,7 +58,7 @@ import os
 
 # Current Working Directory
 cwd = Path(os.getcwd())
-data_path = Path(cwd.joinpath('new_scraped_data/'))
+data_path = Path(cwd.joinpath('scraped_data/'))
 
 # Passo 1: Criando o dataframe com o texto das própias mensagens onde acontece a rolagem
 
@@ -96,6 +88,7 @@ for tk_csv_file in data_path.iterdir():
           continue
 
         train_text = strip_tags(train_text[0]).replace('\n', '')
+        train_text = train_text.split('>')[1]
         skills = re.findall('<b>(.*?)</b>', match, re.DOTALL)
 
         # Para pegar os testes duplos. tinha um total de 615 testes duplos
@@ -142,14 +135,18 @@ for tk_csv_file in data_path.iterdir():
 
 df_regex_check = pd.DataFrame(skill_list2)
 
+"""
+  Step 3: Export the 2 datasets to clean
+"""
 
-# Passo 3: juntar os datasets ao dataset existente
+skills = ['Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception', 'History',
+          'Insight', 'Intimidation', 'Investigation', 'Medicine', 'Nature', 'Perception',
+          'Performance', 'Persuasion', 'Religion', 'Sleight of Hand', 'Stealth', 'Survival'
+         ]
 
-df_tavern_keeper = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv')
+# Filters only dnd 5e valid skills
+df_message_roll_5e = df_message_roll[df_message_roll['skill'].isin(skills)].copy()
+df_regex_check_5e = df_regex_check[df_regex_check['skill'].isin(skills)].copy()
 
-list_df = [df_message_roll, df_regex_check]
-df_to_export = pd.DataFrame(columns=['skill', 'check_line', 'backward_text', 'origin'])
-df_to_export = df_tavern_keeper.append(list_df, ignore_index=True)
-
-
-df_to_export.to_csv ('skills_dataset.csv', index = False, header=True)
+df_message_roll_5e.to_csv ('message_roll_dataset.csv', index = False, header=True)
+df_regex_check_5e.to_csv ('regex_check_dataset.csv', index = False, header=True)

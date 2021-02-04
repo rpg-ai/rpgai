@@ -1,6 +1,9 @@
 import pandas as pd
 import re
 import spacy
+from nltk.stem.snowball import SnowballStemmer
+import nltk
+from nltk.util import ngrams
 
 from unidecode import unidecode
 
@@ -50,6 +53,7 @@ df['clean_text'] = df['backward_text'].apply(strip_nonalpha)
 df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
 
 nlp = spacy.load("en_core_web_sm")
+stemmer = SnowballStemmer(language='english')
 
 new_stopwords = {
                 #Common words
@@ -67,13 +71,38 @@ stopwords.update(new_stopwords)
 Try options with lemma and stem
 """
 def tokenize(str_text):
-  doc = nlp(str_text)
-  # Remove stop Words, keeps verbs and nouns
-  tokens = [token.text for token in doc if (not token.is_stop) and token.pos_ == 'VERB' or token.pos_ == 'NOUN']
-  
-  return ' '.join(tokens)
+    doc = nlp(str_text)
+    # Remove stop Words, keeps verbs and nouns
+    tokens = [token.text for token in doc if (not token.is_stop) and token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ']
+    return ' '.join(tokens)
+
+def stemmize(str_text):
+    doc = nlp(str_text)
+    # Remove stop Words, keeps verbs and nouns
+    tokens = [token.text for token in doc if (not token.is_stop) and token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ']
+    stemms = [stemmer.stem(token) for token in tokens]
+
+    return ' '.join(stemms)
+
+def lemmanize(str_text):
+    doc = nlp(str_text)
+    # Remove stop Words, keeps verbs and nouns
+    tokens = [token.lemma_ for token in doc if (not token.is_stop) and token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ']
+    return ' '.join(tokens)
+
+def ngramnizer(str_text, n):
+    token = nltk.word_tokenize(str_text)
+    token_grams = ngrams(token, n)
+    return ' '.join(token_grams)
+
 
 df['train_text'] = df['clean_text'].apply(tokenize)
+
+df['stemm_text'] = df['clean_text'].apply(stemmize)
+
+df['lemma_text'] = df['clean_text'].apply(lemmanize)
+
+#df['bigrams_text'] = df['clean_text'].apply(ngramnizer, args=(2,))
 
 # Check data distribution per skill
 df.skill.value_counts()
@@ -93,9 +122,10 @@ from sklearn import metrics
 from sklearn.metrics import confusion_matrix
 import numpy as np
 
+
 # Bag of words
 count_vect = CountVectorizer()
-bow = count_vect.fit_transform(df_estrat['train_text'])
+bow = count_vect.fit_transform(df_estrat['lemma_text'])
 # tf-idf
 tfidf_transformer = TfidfTransformer()
 bow_tfidf = tfidf_transformer.fit_transform(bow)
@@ -129,7 +159,7 @@ religion = 'i try recognize the holy symbol'
 acrobatics2 = 'you tumble the strike'
 
 def check_for_skill(skill_name, skill, n):
-    skill_test = tokenize(strip_nonalpha(skill))
+    skill_test = lemmanize(strip_nonalpha(skill))
     y_valid = clf.predict(count_vect.transform([skill_test]))
     y_valid_prob = clf.predict_proba(count_vect.transform([skill_test]))
     

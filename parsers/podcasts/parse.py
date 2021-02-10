@@ -6,6 +6,8 @@ import sys
 sys.path.append("..\\..\\utils")
 from skills_5e import skills
 
+NUMBER_OF_WORDS = 20
+
 """
 Returns the regex pattern to find the checks
 Checks example: 
@@ -16,6 +18,16 @@ Checks example:
 def pattern(skill):
   return re.compile("roll(.*?)(?:"+ skill +")|" + skill + " (?:check|roll)", re.IGNORECASE)
 
+def get_train_text(messages, check_position):
+  text_position = check_position-1
+  train_text = messages[text_position]
+  #precisa arrumar isso aqui porque ele ta fazendo recursivamente até encontrar uma unica mensagem com mais de 20 palavras
+  if len(train_text.split()) < NUMBER_OF_WORDS:
+    # Recursivily concat the backward test
+    return get_train_text(messages, text_position) + train_text
+
+  else:
+    return train_text
 
 # Current Working Directory
 cwd = Path(os.getcwd())
@@ -34,14 +46,17 @@ for text_file in data_path.iterdir():
 
     messages = session_transcript.split(':')
 
-    for message_text in messages:
+    for idx, message_text in enumerate(messages):
 
       for skill in skills():
 
         for match in re.finditer(pattern(skill), message_text):
-          print(match)
+          #print(message_text + '\n')
+          dict_skill = {}
+          dict_skill.update({'skill': skill, 'backward_text': get_train_text(messages, idx), 'check_line': message_text}) 
+          skill_train_text.append(dict_skill)
+
     #esse break eh apenas para teste pra manter no primeiro arquivo
     break
 
-#text_skill = 'shirt.Kyle: Roll me a deception.Goodrich: Hello'
-#print(text_skill.split(':'))
+df = pd.DataFrame(skill_train_text)

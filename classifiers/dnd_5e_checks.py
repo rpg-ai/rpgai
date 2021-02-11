@@ -73,13 +73,13 @@ Try options with lemma and stem
 def tokenize(str_text):
     doc = nlp(str_text)
     # Remove stop Words, keeps verbs and nouns
-    tokens = [token.text for token in doc if (not token.is_stop) and token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ']
+    tokens = [token.text for token in doc if (not token.is_stop) and (token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ')]
     return ' '.join(tokens)
 
 def stemmize(str_text):
     doc = nlp(str_text)
     # Remove stop Words, keeps verbs and nouns
-    tokens = [token.text for token in doc if (not token.is_stop) and token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ']
+    tokens = [token.text for token in doc if (not token.is_stop) and (token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ')]
     stemms = [stemmer.stem(token) for token in tokens]
 
     return ' '.join(stemms)
@@ -87,7 +87,7 @@ def stemmize(str_text):
 def lemmanize(str_text):
     doc = nlp(str_text)
     # Remove stop Words, keeps verbs and nouns
-    tokens = [token.lemma_ for token in doc if (not token.is_stop) and token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ']
+    tokens = [token.lemma_ for token in doc if (not token.is_stop) and (token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ')]
     return ' '.join(tokens)
 
 def ngramnizer(str_text, n):
@@ -102,7 +102,7 @@ df['stemm_text'] = df['clean_text'].apply(stemmize)
 
 df['lemma_text'] = df['clean_text'].apply(lemmanize)
 
-#df['bigrams_text'] = df['clean_text'].apply(ngramnizer, args=(2,))
+#df['bigrams_text'] = df['lemma_text'].apply(ngramnizer, args=(2,))
 
 # Check data distribution per skill
 df.skill.value_counts()
@@ -124,8 +124,8 @@ import numpy as np
 
 
 # Bag of words
-count_vect = CountVectorizer()
-bow = count_vect.fit_transform(df_estrat['lemma_text'])
+count_vect = CountVectorizer(max_features=None, min_df=3, ngram_range=(2, 2))
+bow = count_vect.fit_transform(df_estrat['stemm_text'])
 # tf-idf
 tfidf_transformer = TfidfTransformer()
 bow_tfidf = tfidf_transformer.fit_transform(bow)
@@ -138,7 +138,7 @@ X_train, X_test, y_train, y_test = train_test_split(bow_tfidf, df_estrat['skill'
 #clf = XGBClassifier(objective = 'binary:logistic')
 #clf = SVC() 
 #clf.probability=True
-clf = RandomForestClassifier(n_estimators=100)
+clf = RandomForestClassifier(n_estimators=200)
 clf = clf.fit(X_train, y_train)
 
 y_pred = clf.predict(X_test)
@@ -151,12 +151,14 @@ print(f"Precision: {metrics.precision_score(y_test, y_pred, average='macro'):.2%
 """
 Check some cases to analyze the model
 """
-acrobatics = 'seeing his princess wrap a black cord he says, oh this is gonna be fun, much appreciated.  "Metal, second verse same as the first " as he tumbles behind the next living spell '
-athletics = 'ASHLEY: Right, okay. MATT: That finishes its turn. Beau, you are up. You watch Yasha slam on the ground, unconscious next to you, the blade clattering to the ground and coming to rest. The creature lifts up (wheezing) and vanishes into the stone above you. MARISHA: I can not get a reaction from it, as it goes? MATT: It was not close enough to you, unfortunately. MARISHA: Fuck. Im going to run over to this bookcase and put my staff behind it to see if I can knock it over. MATT: You get the staff on the fulcrum.'
+acrobatics = 'as he tumbles behind the next living spell '
+athletics = 'Im going to run over to this bookcase and put my staff behind it to see if I can knock it over. MATT: You get the staff on the fulcrum.'
 survival = 'Thanks to Halbarad s advice and map, Ren felt prepared for the route they would take on the journey.'
-insight = 'Will pay keen attention to read into any suggestion of how the news is presented to Thorin  and how welcome it is to him. Zaken has a sneaky feeling that Thorin has something lingering in his mind  from the meeting they had yesterday anyway.'
+insight = 'Zaken has a sneaky feeling that Thorin has something lingering in his mind  from the meeting they had yesterday anyway.'
 religion = 'i try recognize the holy symbol'
 acrobatics2 = 'you tumble the strike'
+
+msg = 'Belu measures up everyone else and try to get a sense of who is in charge.'
 
 def check_for_skill(skill_name, skill, n):
     skill_test = lemmanize(strip_nonalpha(skill))
@@ -176,10 +178,60 @@ def check_for_skill(skill_name, skill, n):
     return y_valid
 
 # Skill Check to validate
-skill_to_check = check_for_skill('acrobatics2', acrobatics2, 3)
+skill_to_check = check_for_skill('religion', religion, 3)
 
 
+"""
+"""
+def skills():
 
+    skills = [
+    'Deception',
+    'Intimidation',
+    'Performance',
+    'Persuasion',
+    'Acrobatics',
+    'Sleight of Hand',
+    'Stealth',
+    'Arcana',
+    'History',
+    'Investigation',
+    'Nature',
+    'Religion',
+    'Athletics',
+    'Animal Handling',
+    'Insight',
+    'Medicine',
+    'Perception',
+    'Survival'
+    ]
+
+    return skills
+
+
+import os
+import sys
+sys.path.append(os.getcwd())
+
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+
+# The data frame needs the skill and train_text columns
+def wordcloud_by_df(df):
+  
+  for skill in skills():
+    df_train_text = df[df['skill'] == skill]
+    document = ' '.join(df_train_text['lemma_text'])
+    wordcloud(document)
+
+def wordcloud(text):
+  wordcloud = WordCloud(background_color="white").generate(text)
+  plt.figure(figsize=(10,10))
+  plt.imshow(wordcloud, interpolation='bilinear')
+  plt.axis("off")
+
+
+wordcloud_by_df(df_estrat)
 
 """
 

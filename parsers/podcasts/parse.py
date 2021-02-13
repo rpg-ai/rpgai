@@ -4,9 +4,11 @@ import os
 import pandas as pd
 import sys
 sys.path.append("..\\..\\utils")
-from skills_5e import skills
+from skills import skills_5e, skills_3_5e
 
-NUMBER_OF_WORDS = 20
+df_checks = pd.read_csv('https://raw.githubusercontent.com/amiapmorais/datasets/master/5e_skills_dict.csv')
+
+NUMBER_OF_WORDS = 30
 
 """
 Returns the regex pattern to find the checks
@@ -18,10 +20,12 @@ Checks example:
 def pattern(skill):
   return re.compile("roll(.*?)(?:"+ skill +")|" + skill + " (?:check|roll)", re.IGNORECASE)
 
+
 def get_train_text(messages, check_position):
-  text_position = check_position-1
+
+  text_position = check_position - 1
   train_text = messages[text_position]
-  #precisa arrumar isso aqui porque ele ta fazendo recursivamente até encontrar uma unica mensagem com mais de 20 palavras
+  
   if len(train_text.split()) < NUMBER_OF_WORDS:
     # Recursivily concat the backward test
     return get_train_text(messages, text_position) + train_text
@@ -29,12 +33,44 @@ def get_train_text(messages, check_position):
   else:
     return train_text
 
+# Remove o nome dos personagens
+def remove_char_names(text):
+  # bombarded
+  bombard_names = ['Kyle', 'Ali', 'Spurrier', 'Goodrich', 'Yashee', 'Randy', "Raz’ul"]
+  # adventurezone
+  az_players_names = ['Griffin', 'Justin', 'Travis', 'Clint']
+  az_char_names = ['Duck', 'Aubrey', 'Edmund', 'Taako', 'Merle', 'Magnus', 'Irene', 'Nadiya', 'Chris'
+    'Augustus', 'Errol', 'Gandy']
+  #encounter_party
+  ep_players = ['Landree', 'Sarah', 'Ned', 'Brian']
+  #gp
+  gp_players = ['Lucifer', 'Lilith', 'Amanda', 'Syd', 'Cassidy']
+  #join_party
+  jp_players = ['Eric', 'Brandon', 'Lauren', 'Briggon', 'Julia']
+  #magpie
+  magpie_players = ['RHI', 'MADGE', 'JOSIE', 'KIM', 'MINNA']
+
+  char_names = bombard_names + az_players_names + ep_players + gp_players + jp_players + magpie_players
+  
+  for name in char_names: 
+    text = text.replace(name, ' ') 
+  
+  return " ".join(text.split())
+
+# Retorna o nome da skill no DnD 5e com base no dicionário
+def get_5e_skill_name(old_skill_name): 
+  
+  # Manter apenas palavras
+  old_skill_name = re.sub(r"[^a-z]", ' ', old_skill_name.lower())
+  
+  df_skill = df_checks.loc[df_checks['text_skill'].str.contains(re.compile(r'\b({0})\b'.format(old_skill_name), flags=re.IGNORECASE))]
+  return old_skill_name if df_skill.empty else df_skill.iloc[0]['5e_skill']
+
 # Current Working Directory
 cwd = Path(os.getcwd())
 data_path = Path(cwd.joinpath('scraped_data/'))
 
-players_char_names = ['Kyle', 'Ali', 'Spurrier', 'Goodrich', 'Yashee', 'Randy', "Raz’ul"]
-
+skill_list = skills_5e() + skills_3_5e()
 
 skill_train_text = []
 
@@ -44,19 +80,25 @@ for text_file in data_path.iterdir():
   
   for session_transcript in df['selection1_transcript']:
 
+    session_transcript = remove_char_names(session_transcript)
+
     messages = session_transcript.split(':')
 
     for idx, message_text in enumerate(messages):
 
-      for skill in skills():
+      for skill in skill_list:
 
         for match in re.finditer(pattern(skill), message_text):
-          #print(message_text + '\n')
+
+          train_text = get_train_text(messages, idx)
           dict_skill = {}
-          dict_skill.update({'skill': skill, 'backward_text': get_train_text(messages, idx), 'check_line': message_text}) 
+          dict_skill.update({
+            'skill': get_5e_skill_name(skill), 
+            'backward_text': ' '.join(train_text.split()[-NUMBER_OF_WORDS:]), 
+            'check_line': message_text,
+            'original_name': skill}) 
+          
           skill_train_text.append(dict_skill)
 
-    #esse break eh apenas para teste pra manter no primeiro arquivo
-    break
-
 df = pd.DataFrame(skill_train_text)
+df.to_csv ('general_podcasts.csv', index = False, header=True)

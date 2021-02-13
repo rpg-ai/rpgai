@@ -10,6 +10,7 @@ from unidecode import unidecode
 CR_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.csv'
 TK_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv'
 SS_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/skill_db.csv'
+general_podcasts_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/podcasts/general_podcasts.csv'
 
 fields = {'skill', 'backward_text'}
 

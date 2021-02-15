@@ -35,6 +35,7 @@ def get_train_text(messages, check_position):
 
 # Remove o nome dos personagens
 def remove_char_names(text):
+
   # bombarded
   bombard_names = ['Kyle', 'Ali', 'Spurrier', 'Goodrich', 'Yashee', 'Randy', "Raz’ul"]
   # adventurezone
@@ -49,9 +50,12 @@ def remove_char_names(text):
   jp_players = ['Eric', 'Brandon', 'Lauren', 'Briggon', 'Julia']
   #magpie
   magpie_players = ['RHI', 'MADGE', 'JOSIE', 'KIM', 'MINNA']
+  #alba
+  alba_names = ['ZANE', 'GUBBIN', 'ROSINE', 'STAE', 'GUBBIE', 'BETULE', 'SEA', 'MIK', 'MIKE', 'SEAN', 'CARTER', 'ALB', 'MAGNU',
+    'HOLL']
 
-  char_names = bombard_names + az_players_names + ep_players + gp_players + jp_players + magpie_players
-  
+  char_names = bombard_names + az_players_names + ep_players + gp_players + jp_players + magpie_players + alba_names
+
   for name in char_names: 
     text = text.replace(name, ' ') 
   
@@ -77,6 +81,9 @@ skill_train_text = []
 for text_file in data_path.iterdir():
 
   df = pd.read_csv(text_file)
+
+   # Conversão pra evitar erros de tipos de dados
+  df['selection1_transcript'] = df['selection1_transcript'].astype(str)
   
   for session_transcript in df['selection1_transcript']:
 

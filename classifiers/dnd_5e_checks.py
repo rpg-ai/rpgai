@@ -10,18 +10,20 @@ from unidecode import unidecode
 CR_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.csv'
 TK_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv'
 SS_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/skill_db.csv'
-general_podcasts_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/podcasts/general_podcasts.csv'
+GP_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/podcasts/general_podcasts.csv'
 
 fields = {'skill', 'backward_text'}
 
 df_critical_role = pd.read_csv(CR_url, usecols=fields)
 df_tavern_keeper_5e = pd.read_csv(TK_url, usecols=fields)
 df_skill_sheet = pd.read_csv(SS_url, usecols=fields)
+df_general_podcast = pd.read_csv(GP_url, usecols=fields)
 
 # Flag data source
 df_critical_role['origin'] = 'CR'
 df_tavern_keeper_5e['origin'] = 'TK'
 df_skill_sheet['origin'] = 'SS'
+df_general_podcast['origin'] = 'GP'
 
 """
 DEBUG - Alguma fonte de dados está zoada!!!
@@ -30,7 +32,7 @@ df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).res
 """
 # Append all dataframes
 #list_df = [df_critical_role, df_tavern_keeper_5e]
-list_df = [df_critical_role]
+list_df = [df_critical_role, df_skill_sheet, df_general_podcast]
 df = df_skill_sheet.append(list_df, ignore_index=True)
 
 # Cleans text from processing and tokenizing
@@ -49,9 +51,9 @@ def strip_nonalpha(text):
 df = df.dropna()
 
 # Cleans text
-df['clean_text'] = df['backward_text'].apply(strip_nonalpha)
+df['clean_text'] = df['backward_text']
 
-df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
+#df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
 
 nlp = spacy.load("en_core_web_sm")
 stemmer = SnowballStemmer(language='english')
@@ -59,7 +61,8 @@ stemmer = SnowballStemmer(language='english')
 new_stopwords = {
                 #Common words
                 "going", "right", "okay", "yeah", "want", "try", "gonna", "good", "yes", "look", "know", "way", "looks", "guy",
-                "little", "check", "thin", "thing", "guys", "come", "roll", "let", "time", "got", "goes", "maybe", 
+                "little", "check", "thin", "thing", "guys", "come", "roll", "let", "time", "got", "goes", "maybe", "don", "think", 
+                "let", "got",
                 #PCs and NPCs Names
                 "jester", "caleb", "nott", "fjord", "yasha", "beau", "matt", "sam", "travis", "marisha", "ashley", "laura", 
                 "liam", "professor", "thaddeus", "taliesin", "mollymauk", "grog", "pike"
@@ -68,6 +71,8 @@ new_stopwords = {
 stopwords = spacy.lang.en.stop_words.STOP_WORDS
 stopwords.update(new_stopwords)
 
+print(stopwords)
+
 """
 Try options with lemma and stem
 """
@@ -75,6 +80,7 @@ def tokenize(str_text):
     doc = nlp(str_text)
     # Remove stop Words, keeps verbs and nouns
     tokens = [token.text for token in doc if (not token.is_stop) and (token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ')]
+
     return ' '.join(tokens)
 
 def stemmize(str_text):
@@ -96,17 +102,32 @@ def ngramnizer(str_text, n):
     token_grams = ngrams(token, n)
     return ' '.join(token_grams)
 
-
 df['train_text'] = df['clean_text'].apply(tokenize)
 
 df['stemm_text'] = df['clean_text'].apply(stemmize)
 
 df['lemma_text'] = df['clean_text'].apply(lemmanize)
 
+import os
+
+def root_path():
+    return os.path.abspath(os.sep)
+
+def folder(*args):
+    return os.path.join(root_path(), *args)
+
+path_obs = folder('app', 'rpgai', 'data', 'rpgai_text.parquet')
+
+df.to_parquet(path_obs, index=False)
+
 #df['bigrams_text'] = df['lemma_text'].apply(ngramnizer, args=(2,))
 
 # Check data distribution per skill
 df.skill.value_counts()
+
+#Retira skills não mapeados
+not_skill = ['disguise', 'concentration']
+df = df[~df.skill.isin(not_skill)]
 
 # Do an oversampling to try to get better prediction
 df_estrat = df.groupby('skill').apply(pd.DataFrame.sample, n=400, replace=True).reset_index(drop=True)
@@ -123,16 +144,16 @@ from sklearn import metrics
 from sklearn.metrics import confusion_matrix
 import numpy as np
 
-
 # Bag of words
-count_vect = CountVectorizer(max_features=None, min_df=3, ngram_range=(2, 2))
+#count_vect = CountVectorizer(max_features=None, min_df=3, ngram_range=(2, 2))
+count_vect = CountVectorizer()
 bow = count_vect.fit_transform(df_estrat['stemm_text'])
 # tf-idf
 tfidf_transformer = TfidfTransformer()
 bow_tfidf = tfidf_transformer.fit_transform(bow)
 
 # split data for train and test
-X_train, X_test, y_train, y_test = train_test_split(bow_tfidf, df_estrat['skill'], test_size=0.25, random_state = 42)
+X_train, X_test, y_train, y_test = train_test_split(bow_tfidf, df_estrat['skill'], test_size=0.2, random_state = 42)
 
 # Train Model
 #clf = LinearSVC()
@@ -152,17 +173,27 @@ print(f"Precision: {metrics.precision_score(y_test, y_pred, average='macro'):.2%
 """
 Check some cases to analyze the model
 """
-acrobatics = 'as he tumbles behind the next living spell '
-athletics = 'Im going to run over to this bookcase and put my staff behind it to see if I can knock it over. MATT: You get the staff on the fulcrum.'
-survival = 'Thanks to Halbarad s advice and map, Ren felt prepared for the route they would take on the journey.'
-insight = 'Zaken has a sneaky feeling that Thorin has something lingering in his mind  from the meeting they had yesterday anyway.'
-religion = 'i try recognize the holy symbol'
-acrobatics2 = 'you tumble the strike'
-
-msg = 'Belu measures up everyone else and try to get a sense of who is in charge.'
+acrobatics = "you tumble the strike"
+animal = "No it is just a regular sized dog that has three heads and is like all blue and ethereal. And they get right up in each others faces, and then just growls at each other, [growling] and both of them are in a dead stop. They are locked eyes at each other."
+athletics = "So, I'm going to reach up and use the Long Arm of the Law to kind of grapple the edge of the doorway, and then kind of like ferry people up and climb up my body and my arm to the doorway."
+arcana = "Hey, am I passively sensing any kind of magic?"
+deception = "We want to look like nondescript peasants. So if somebody saw us there, they would assume we were there to clean, to deliver food, to do whatever needs doing in the house."
+history = "I guess I haven't seen it in a really long time I don’t know where it is. I am looking for this uh mouthpiece, I don’t know what it’s attached to now. But it looks like a very large open mouth and it’s laughing, and it has really bright red lips and I don’t know if you’ve seen it before, but if you see it I would love to get my hand on it cause I think it’s tied to all these things happening right now."
+insight = "Like a suggestive wink or like we're on the same team wink? Can I investigate the wink?"
+intimidation = "I am going to push my cloak aside to have one hand and my dagger and hold my hand up knowing that I cannot stop him with the body force but I can stop him with intimidation and say"
+investigation = "I’d love to search the ceiling to see if there are any hatches."
+medicine = "Johnny, do you know anything about this frozen poison type thing? Can you help him right now?"
+nature = "I think back on my adventures in nature to perhaps recognize what they are."
+perception = "Do I notice anything dangerous?"
+performance = "And pulls out his help horn, runs across the room while blowing it and then pulls his maroon cape in front of him as if he's egging Nessie on."
+persuasion = "But when this is all over and we trap the Council, and everything goes back to normal, I don’t want anyone to know who I am. I want a fresh start. Except for the friends and the family I made. Inara should know, and everyone else, Evan. But the world at large, I don’t want any fame, fortune, I just want to go. I don’t want anyone to know I’m the reason this started, this whole thing started. I just want to go sell tea."
+religion = "I would like my religious senses to let me know any kind of divine interference that might be going on."
+sleight = "Before Bridge walks away, Inara’s going to pickpocket him for gold."
+stealth = "Come out that side and then get up into the ring, behind the barrel as cover, and then attack the guy that way."
+survival = "The atmosphere is breaking his concentration on his main task of checking around the party for travelling advantages...!"
 
 def check_for_skill(skill_name, skill, n):
-    skill_test = lemmanize(strip_nonalpha(skill))
+    skill_test = stemmize(strip_nonalpha(skill))
     y_valid = clf.predict(count_vect.transform([skill_test]))
     y_valid_prob = clf.predict_proba(count_vect.transform([skill_test]))
     
@@ -179,8 +210,7 @@ def check_for_skill(skill_name, skill, n):
     return y_valid
 
 # Skill Check to validate
-skill_to_check = check_for_skill('religion', religion, 3)
-
+skill_to_check = check_for_skill('arcana', arcana, 3)
 
 """
 """
@@ -222,7 +252,7 @@ def wordcloud_by_df(df):
   
   for skill in skills():
     df_train_text = df[df['skill'] == skill]
-    document = ' '.join(df_train_text['lemma_text'])
+    document = ' '.join(df_train_text['stemm_text'])
     wordcloud(document)
 
 def wordcloud(text):
@@ -233,18 +263,3 @@ def wordcloud(text):
 
 
 wordcloud_by_df(df_estrat)
-
-"""
-
-TO DO >> Improve the data analysis
-
-
-"""
-
-def BOW(skill_name):
-  skills_backward = df[df['skill'] == skill_name]
-  backward_train, backward_test, skill_train, skill_test = train_test_split(skills_backward['train_text'], skills_backward['skill'], random_state = 0)
-  
-  count_vect_skill = CountVectorizer()
-  count_vect_skill.fit_transform(backward_train)
-  print(count_vect_skill.get_feature_names())

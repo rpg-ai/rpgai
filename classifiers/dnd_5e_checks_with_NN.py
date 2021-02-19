@@ -174,6 +174,61 @@ clf = RandomForestClassifier(n_estimators=200)
 clf = clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 
+"""
+Neural Network Test
+"""
+
+### FAZER ENCODING DO LABEL
+from keras.models import Sequential
+from keras import layers
+
+skill_encode = {
+            "Acrobatics" : 0
+            ,"Animal Handling" : 1
+            ,"Athletics" : 2
+            ,"Arcana" : 3
+            ,"Deception" : 4
+            ,"History" : 5
+            ,"Insight" : 6
+            ,"Intimidation" : 7
+            ,"Investigation" : 8
+            ,"Medicine" : 9
+            ,"Nature" : 10
+            ,"Perception" : 11
+            ,"Performance" : 12
+            ,"Persuasion" : 13
+            ,"Religion" : 14
+            ,"Sleight of Hand" : 15
+            ,"Stealth" : 16
+            ,"Survival" : 17
+            }
+
+df_estrat['skill_encoded'] = df_estrat['skill'].replace(skill_encode)
+X_train, X_test, y_train, y_test = train_test_split(bow_tfidf, df_estrat['skill_encoded'], test_size=0.2, random_state = 42)
+print(y_train)
+
+input_dim = X_train.shape[1]  # Number of features
+
+model = Sequential()
+model.add(layers.Dense(10, input_dim=input_dim, activation='relu'))
+model.add(layers.Dense(1, activation='sigmoid'))
+
+model.compile(loss='binary_crossentropy', 
+              optimizer='adam', 
+              metrics=['accuracy'])
+model.summary()
+
+history = model.fit(X_train, y_train,
+                    epochs=100,
+                    verbose=False,
+                    validation_data=(X_test, y_test),
+                    batch_size=10)
+
+loss, accuracy = model.evaluate(X_train, y_train, verbose=False)
+print("Training Accuracy: {:.4f}".format(accuracy))
+loss, accuracy = model.evaluate(X_test, y_test, verbose=False)
+print("Testing Accuracy:  {:.4f}".format(accuracy))
+
 # Get Train / Test Metrics
 print("")
 print("Train / Test:")

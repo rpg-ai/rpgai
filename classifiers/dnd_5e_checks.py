@@ -242,6 +242,14 @@ for skill in skill_dict:
     skill_to_check = check_for_skill(skill, skill_dict[skill], 3)
 
 """
+To check a single text
+"""
+skill_real = 'Acrobatics'
+text = 'I do a back somersault to avoid being hit'
+check_for_skill(skill, skill_dict[skill], 3)
+
+
+"""
 Wordcloud using tfidf features
 """
 ### Melhorar isso aqui

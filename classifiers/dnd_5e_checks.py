@@ -133,7 +133,7 @@ df['token_text'], df['stemm_text'], df['lemma_text'] = zip(*df['backward_text'].
 """
 SET HERE THE TEXT TO BE USED IN MODEL TRAINING
 """
-df['train_text'] = df['stemm_text']
+df['train_text'] = df['lemma_text']
 
 # Drop empty texts after NLP pre processing
 df_train = df[['skill', 'train_text']].copy()
@@ -180,7 +180,7 @@ print("Train / Test:")
 print(f"Accuracy: {metrics.accuracy_score(y_test, y_pred):.2%}")
 print(f"Precision: {metrics.precision_score(y_test, y_pred, average='macro'):.2%}")
 print(confusion_matrix(y_test, y_pred))
-plot_confusion_matrix('Train / Test', y_test, y_pred)
+#plot_confusion_matrix('Train / Test', y_test, y_pred)
 
 # Get validation metrics
 print("")
@@ -221,8 +221,8 @@ REMEMBER TO USE THE SAME TEXT THAT WAS USED TO TRAIN THE MODEL!!!
 """
 def check_for_skill(skill_name, skill, n):
     tokens, stemms, lemmas = nlp_preprocess(skill)
-    y_valid = clf.predict(vectorizer.transform([stemms]))
-    y_valid_prob = clf.predict_proba(vectorizer.transform([stemms]))
+    y_valid = clf.predict(vectorizer.transform([lemmas]))
+    y_valid_prob = clf.predict_proba(vectorizer.transform([lemmas]))
     
     # Print best n matches
     best_n = np.argsort(y_valid_prob, axis=1)[:,-n:]
@@ -246,7 +246,8 @@ To check a single text
 """
 skill_real = 'Acrobatics'
 text = 'I do a back somersault to avoid being hit'
-check_for_skill(skill, skill_dict[skill], 3)
+skill_dict = {skill_real : text}
+check_for_skill(skill_real, skill_dict[skill_real], 3)
 
 
 """

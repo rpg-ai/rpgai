@@ -25,6 +25,9 @@ import matplotlib.pyplot as plt
 
 #for model serialize
 from joblib import dump
+from sklearn.pipeline import Pipeline
+
+
 
 # Cleans text from processing and tokenizing
 def clean_text(text):
@@ -269,5 +272,12 @@ def wordcloud(text):
 wordcloud(' '.join(df1['text']))
 
 
-#Serialize the model and save
-#dump(clf, 'randomfs.pkl')
+def run_pipeline():
+    pipeline = Pipeline(steps= [('tfidf', TfidfVectorizer(analyzer = 'word', max_df = 0.90, min_df = 3,
+    ngram_range=(1, 2), stop_words=new_stopwords)),
+    ('model', RandomForestClassifier(n_estimators = 200))])
+    # fit the pipeline model with the training data 
+    pipeline.fit(df_estrat['train_text'], df_estrat['skill'])
+
+    # dump the pipeline model
+    dump(pipeline, filename='text_classification.joblib')

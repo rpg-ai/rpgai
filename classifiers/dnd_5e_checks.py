@@ -23,6 +23,9 @@ import seaborn as sns
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
+#for model serialize
+from joblib import dump
+
 # Cleans text from processing and tokenizing
 def clean_text(text):
     text = text.lower()
@@ -264,3 +267,7 @@ def wordcloud(text):
   plt.axis("off")
 
 wordcloud(' '.join(df1['text']))
+
+
+#Serialize the model and save
+#dump(clf, 'randomfs.pkl')

@@ -2,9 +2,10 @@
 import pandas as pd
 import re
 import spacy
-from nltk.stem.snowball import SnowballStemmer
+#from nltk.stem.snowball import SnowballStemmer
 from unidecode import unidecode
 import numpy as np
+from flashtext import KeywordProcessor
 
 # Model Train and Selection
 from sklearn.model_selection import train_test_split
@@ -23,10 +24,12 @@ import seaborn as sns
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
-=======
 #for model serialize
 from joblib import dump
 from sklearn.pipeline import Pipeline
+
+# To get processing time
+import time
 
 class Model_Trainer:
    
@@ -55,18 +58,21 @@ class Model_Trainer:
                             'Survival'
                             ]
         
-        #data sources
+        # data sources
         self.CR_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.csv'
         self.TK_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv'
         self.SS_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/skill_db.csv'
         self.GP_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/podcasts/general_podcasts.csv'
         
-        #data to be used
+        # data to be used
         self.fields_to_use = {'skill', 'backward_text'}
+        
+        # Modeling parameters
+        self.min_obs = 400          # minimun number of observations to sample a skill, otherwise oversample to min_obs
         
         # Initialize NPL and stemmer
         self.nlp = spacy.load("en_core_web_sm")
-        self.stemmer = SnowballStemmer(language='english')
+ #       self.stemmer = SnowballStemmer(language='english')
         
          ### Stopwords
         self.rpgai_stopwords = [
@@ -78,38 +84,51 @@ class Model_Trainer:
                         "jester", "caleb", "nott", "fjord", "yasha", "beau", "matt", "sam", "travis", "marisha", "ashley", "laura", 
                         "liam", "professor", "thaddeus", "taliesin", "mollymauk", "grog", "pike"
                         ]
+        
+         # Fast replace for multiples strings: stopwords and custom dictionary
+        self.keyword_processor = KeywordProcessor()
+        # Stopwords
+        for word in self.rpgai_stopwords:
+            self.keyword_processor.add_keyword(word, ' ')
                 
         pass
 
     # Cleans text from processing and tokenizing
     def clean_text(self, text):
-        text = text.lower()
-        t = unidecode(text)
-        t.encode("ascii")  
+        t = text.lower()
+        t = unidecode(t)
+        # t.encode("ascii")  
         t = re.sub(r'[^a-z]', ' ', t)           #Remove nonalpha
-        t = re.sub(r'\s[^a-z]\s', ' ', t)       #Remove nonalpha >> check if is really necessary!?!?
+        #t = re.sub(r'\s[^a-z]\s', ' ', t)       #Remove nonalpha >> check if is really necessary!?!?
         t = re.sub(r"\b[a-z]{1,2}\b", ' ', t)   #Remove words with 1 or 2 letters
         t = re.sub(' +', ' ', t)                #Remove extra spaces
         t = t.strip()                           #Remove leading and trailing spaces
         return t
-
+    
+    # Method to replace stopwords and apply the dictionary for each text
+    def apply_stopwords_dictionary(self, text):
+        return self.keyword_processor.replace_keywords(text)
+    
     # NLP Pre process
     def nlp_preprocess(self, text):
         
-        tokens = []
+        #tokens = []
         lemmas = []
-        stemms = []
-    
+        #stemms = []
+        
+        text = self.apply_stopwords_dictionary(text)
+        
         doc = self.nlp(text)
         
         for token in doc:
             if not token.is_stop: 
                 if (token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ'):
-                    tokens.append(token.text)
+                    #tokens.append(token.text)
                     lemmas.append(token.lemma_)
-                    stemms.append(self.stemmer.stem(token.text))
+                    #stemms.append(self.stemmer.stem(token.text))
         
-        return self.clean_text(' '.join(tokens)), self.clean_text(' '.join(stemms)), self.clean_text(' '.join(lemmas))
+        #return self.clean_text(' '.join(tokens)), self.clean_text(' '.join(stemms)), self.clean_text(' '.join(lemmas))
+        return self.clean_text(' '.join(lemmas))
 
     # Plot a confusion matrix
     def plot_confusion_matrix(self, title, reals, predictions):
@@ -142,34 +161,58 @@ class Model_Trainer:
     # Try to make the the training data more homogeneous
     def data_leveler(self, df):
         
-        return df
+        df_sample = pd.DataFrame()
+        
+        for skill in self.lst_skills:
+            # Get number of observations for skill
+            num_obs = sum(df['skill'].values == skill)
+        
+            # Make a more homogeneous dataset for training
+            if num_obs > self.min_obs:
+                # If skill has more than min_obs, get a sample
+                df_skill = df[df['skill'].values == skill].sample(n = self.min_obs).reset_index(drop=True)
+            else:
+                # If skill has less than min_obs, do an oversample
+                df_skill = df[df['skill'].values == skill].sample(n = self.min_obs, replace=True).reset_index(drop=True)
+            
+            df_sample = df_sample.append(df_skill).reset_index(drop=True)
+                
+        return df_sample
     
     
     # Make data prep for modeling, pre process and NLP
     def data_prep(self, df):
         
         # Drop non mapped skills
-        df = df[df.skill.isin(self.lst_skills)]
+        df = df[df.skill.isin(self.lst_skills)].copy().reset_index(drop=True)
 
         # Check data distribution per skill
-        df.skill.value_counts()
+        print(df.skill.value_counts())
         
         """
         Start NLP Pre Process
         """
         
         # Do NLP pre process in a single step
-        df['token_text'], df['stemm_text'], df['lemma_text'] = zip(*df['backward_text'].map(self.nlp_preprocess))
+        #df['token_text'], df['stemm_text'], df['lemma_text'] = zip(*df['backward_text'].map(self.nlp_preprocess))
+        df['lemma_text'] = df['backward_text'].apply(self.nlp_preprocess)
         
         return df
     
     # Method to create a classification model
     def train_skill_classification(self):
-
-        df = self.data_load()        
-
+        time_ini = time.time()
+        print("Data Load")
+        df = self.data_load()
+        time_end = time.time()
+        print(f"Time for Data Load: {time_end - time_ini} seconds")
+        
+        time_ini = time.time()
+        print("Data Prep")
         df = self.data_prep(df)
-
+        time_end = time.time()
+        print(f"Time for Data Prep: {time_end - time_ini} seconds")
+        
         # Used for debug of NLP pre processing
         #df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
 
@@ -182,20 +225,35 @@ class Model_Trainer:
         df_train = df[['skill', 'train_text']].copy()
         df_train['train_text'].replace('', np.nan, inplace=True)
         df_train.dropna(subset=['train_text'], inplace=True)
-
+        
+        time_ini = time.time()
+        print("Data Leveler")        
         # Do an oversampling to get better samples for prediction
-        df_estrat = df_train.groupby('skill').apply(pd.DataFrame.sample, n=400, replace=True).reset_index(drop=True)
-
+        df_estrat = self.data_leveler(df_train)
+        #df_estrat = df_train.groupby('skill').apply(pd.DataFrame.sample, n=400, replace=True).reset_index(drop=True)
+        time_end = time.time()
+        print(f"Time for Data Leveler: {time_end - time_ini} seconds")
+        
         ### Usar dicionário de termos sinônimos?!?!
-
+        
+        time_ini = time.time()
+        print("BOW & TFIDF")        
         # Bag of words + tf-idf
         vectorizer = TfidfVectorizer(analyzer = 'word', max_df = 0.90, min_df = 3, ngram_range=(1, 2), stop_words=self.rpgai_stopwords)
         bow_tfidf = vectorizer.fit_transform(df_estrat['train_text'])
-        
+        time_end = time.time()
+        print(f"Time for BOW & TFIDF: {time_end - time_ini} seconds")
+                
         # split data for train and test
         ### Montar dataset de validação
+        time_ini = time.time()
+        print("Train and Test Split")        
         X_train, X_test, y_train, y_test = train_test_split(bow_tfidf, df_estrat['skill'], test_size=0.05, random_state = 42)
-
+        time_end = time.time()
+        print(f"Time for Train and Test Split: {time_end - time_ini} seconds")
+        
+        time_ini = time.time()
+        print("Train Model")        
         # Train Model
         #clf = LinearSVC()
         #clf = XGBClassifier(objective = 'binary:logistic')
@@ -203,8 +261,15 @@ class Model_Trainer:
         #clf.probability=True
         clf = RandomForestClassifier(n_estimators=200)
         clf = clf.fit(X_train, y_train)
+        time_end = time.time()
+        print(f"Time for Train Model: {time_end - time_ini} seconds")
+        
+        time_ini = time.time()
+        print("Predict")        
         y_pred = clf.predict(X_test)
-
+        time_end = time.time()
+        print(f"Time for Predict: {time_end - time_ini} seconds")
+        
         # Get Train / Test Metrics
         print("")
         print("Train / Test:")
@@ -217,13 +282,22 @@ class Model_Trainer:
         print("")
         print("Validation:")
         y_val = clf.predict(vectorizer.transform(df['train_text']))
+        df['pred_skill'] = y_val
         print(confusion_matrix(df['skill'], y_val))
         print(f"Validation Accuracy: {metrics.accuracy_score(df['skill'], y_val):.2%}")
         print(f"Validation Precision: {metrics.precision_score(df['skill'], y_val, average='macro'):.2%}")
         self.plot_confusion_matrix('Validation', df['skill'], y_val)
+        
+        path_data = 'C:\\app\\rpgai\\data\\Dados_Teste.parquet'
+        df_train.to_parquet(path_data, index=False)
+        
 
+"""
 mt = Model_Trainer()
 mt.train_skill_classification()
+
+"""
+
 
 """
 Check some cases to analyze the model

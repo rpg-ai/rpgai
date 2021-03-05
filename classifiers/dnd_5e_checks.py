@@ -146,7 +146,6 @@ class Model_Trainer:
         df_train = df[['skill', 'backward_text']].copy().reset_index(drop = True)
         df_train['backward_text'].replace('', np.nan, inplace=True)
         df_train.dropna(subset=['backward_text'], inplace=True)
-
         time_end = time.time()
         print(f"Time for Data Prep: {time_end - time_ini} seconds")
 

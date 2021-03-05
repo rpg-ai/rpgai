@@ -150,10 +150,6 @@ class Model_Trainer:
         df_train['backward_text'].replace('', np.nan, inplace=True)
         df_train.dropna(subset=['backward_text'], inplace=True)
 
-        # Do NLP pre process in a single step
-        #df['token_text'], df['stemm_text'], df['lemma_text'] = zip(*df['backward_text'].map(self.nlp_preprocess))
-        df['lemma_text'] = df['backward_text'].apply(self.nlp_preprocess)
-  
         time_ini = time.time()
         print("Data Leveler")        
         # Do an oversampling to get better samples for prediction

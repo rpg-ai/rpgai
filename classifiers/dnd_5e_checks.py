@@ -4,9 +4,6 @@ import numpy as np
 import os
 import pickle
 
-# For NLP pre processing
-from NLP_Classifier import NLP_Classifier
-
 # Model Train and Selection
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -74,7 +71,6 @@ class Model_Trainer:
         
         pass
 
-
     # Plot a confusion matrix
     def plot_confusion_matrix(self, title, reals, predictions):
         ax = plt.axes()
@@ -138,12 +134,14 @@ class Model_Trainer:
         print("Data Prep")
         # Drop non mapped skills
         df = df[df.skill.isin(self.lst_skills)].copy().reset_index(drop=True)
+
         # Check data distribution per skill
         print(df.skill.value_counts())
         
         time_end = time.time()
         print(f"Time for Data Prep: {time_end - time_ini} seconds")
         
+
         # Used for debug of NLP pre processing
         #df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
 
@@ -151,7 +149,11 @@ class Model_Trainer:
         df_train = df[['skill', 'backward_text']].copy().reset_index(drop = True)
         df_train['backward_text'].replace('', np.nan, inplace=True)
         df_train.dropna(subset=['backward_text'], inplace=True)
-        
+
+        # Do NLP pre process in a single step
+        #df['token_text'], df['stemm_text'], df['lemma_text'] = zip(*df['backward_text'].map(self.nlp_preprocess))
+        df['lemma_text'] = df['backward_text'].apply(self.nlp_preprocess)
+  
         time_ini = time.time()
         print("Data Leveler")        
         # Do an oversampling to get better samples for prediction
@@ -160,14 +162,17 @@ class Model_Trainer:
         time_end = time.time()
         print(f"Time for Data Leveler: {time_end - time_ini} seconds")
         
+
         time_ini = time.time()
         print("NLP")        
         # Bag of words + tf-idf
         bow_tfidf = self.nlp.create_TFIDF_Vec_model(df_estrat['backward_text'].tolist(), path_models)
+
         time_end = time.time()
         print(f"Time for BOW & TFIDF: {time_end - time_ini} seconds")
                 
         # split data for train and test
+
         time_ini = time.time()
         print("Train and Test Split")        
         X_train, X_test, y_train, y_test = train_test_split(bow_tfidf, df_estrat['skill'], test_size=0.05, random_state = 42)
@@ -208,8 +213,10 @@ class Model_Trainer:
         # Get validation metrics
         print("")
         print("Validation:")
+
         y_val = clf.predict(self.nlp.use_TFIDF_Vec_model(df_train['backward_text'].tolist(), path_models))
         df_train['pred_skill'] = y_val
+
         print(confusion_matrix(df['skill'], y_val))
         print(f"Validation Accuracy: {metrics.accuracy_score(df['skill'], y_val):.2%}")
         print(f"Validation Precision: {metrics.precision_score(df['skill'], y_val, average='macro'):.2%}")

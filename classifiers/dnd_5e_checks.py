@@ -28,6 +28,8 @@ from sklearn.pipeline import Pipeline
 # To get processing time
 import time
 
+from NLP_Classifier import NLP_Classifier
+
 class Model_Trainer:
    
     # Class Initialization

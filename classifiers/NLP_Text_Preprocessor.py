@@ -99,7 +99,7 @@ class NLP_Text_Preprocessor:
         # corpus = self.lemmatizer(corpus)
         #print(corpus)
         end = time.time()
-        print(f'NLP Pre Process Time: {print(end - start)} seconds')
+        print(f'NLP Pre Process Time: {end - start} seconds')
         
         return corpus 
 

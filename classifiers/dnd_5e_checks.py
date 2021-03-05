@@ -124,24 +124,21 @@ class Model_Trainer:
     
     # Method to create a classification model
     def train_skill_classification(self, path_models):
+
+        # Data Loading
         time_ini = time.time()
-        print("Data Load")
         df = self.data_load()
         time_end = time.time()
         print(f"Time for Data Load: {time_end - time_ini} seconds")
         
+        # Data Prep
         time_ini = time.time()
-        print("Data Prep")
         # Drop non mapped skills
         df = df[df.skill.isin(self.lst_skills)].copy().reset_index(drop=True)
 
         # Check data distribution per skill
-        print(df.skill.value_counts())
-        
-        time_end = time.time()
-        print(f"Time for Data Prep: {time_end - time_ini} seconds")
-        
-
+        #print(df.skill.value_counts())
+                
         # Used for debug of NLP pre processing
         #df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
 
@@ -149,40 +146,36 @@ class Model_Trainer:
         df_train = df[['skill', 'backward_text']].copy().reset_index(drop = True)
         df_train['backward_text'].replace('', np.nan, inplace=True)
         df_train.dropna(subset=['backward_text'], inplace=True)
+        time_end = time.time()
+        print(f"Time for Data Prep: {time_end - time_ini} seconds")
 
+        # Data leveler to make training data more homogeneous
         time_ini = time.time()
-        print("Data Leveler")        
         # Do an oversampling to get better samples for prediction
         df_estrat = self.data_leveler(df_train)
-        #df_estrat = df_train.groupby('skill').apply(pd.DataFrame.sample, n=400, replace=True).reset_index(drop=True)
         time_end = time.time()
         print(f"Time for Data Leveler: {time_end - time_ini} seconds")
         
-
+        # NLP processing
         time_ini = time.time()
-        print("NLP")        
         # Bag of words + tf-idf
         bow_tfidf = self.nlp.create_TFIDF_Vec_model(df_estrat['backward_text'].tolist(), path_models)
-
         time_end = time.time()
-        print(f"Time for BOW & TFIDF: {time_end - time_ini} seconds")
+        print(f"Time for BOW & TFIDF (include NLP Pre Process): {time_end - time_ini} seconds")
                 
         # split data for train and test
-
         time_ini = time.time()
-        print("Train and Test Split")        
         X_train, X_test, y_train, y_test = train_test_split(bow_tfidf, df_estrat['skill'], test_size=0.05, random_state = 42)
         time_end = time.time()
         print(f"Time for Train and Test Split: {time_end - time_ini} seconds")
-        
+
+        # Train model        
         time_ini = time.time()
-        print("Train Model")        
-        # Train Model
         #clf = LinearSVC()
         #clf = XGBClassifier(objective = 'binary:logistic')
-        #clf = SVC() 
-        #clf.probability=True
-        clf = RandomForestClassifier(n_estimators=200)
+        clf = SVC() 
+        clf.probability=True
+        #clf = RandomForestClassifier(n_estimators=200)
         clf = clf.fit(X_train, y_train)
         
          # Save model to disk
@@ -190,10 +183,10 @@ class Model_Trainer:
         pickle.dump(clf, open(filename, 'wb'))
         
         time_end = time.time()
-        print(f"Time for Train Model: {time_end - time_ini} seconds")
+        print(f"Time for Model Training: {time_end - time_ini} seconds")
         
+        # Score train and test data
         time_ini = time.time()
-        print("Predict")        
         y_pred = clf.predict(X_test)
         time_end = time.time()
         print(f"Time for Predict: {time_end - time_ini} seconds")

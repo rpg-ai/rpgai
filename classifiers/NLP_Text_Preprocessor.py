@@ -19,7 +19,7 @@ class NLP_Text_Preprocessor:
     def __init__(self):
         
          # Initialize NPL and stemmer
-        self.nlp = spacy.load("en_core_web_sm", disable=['ner', 'tok2vec'])
+        self.nlp = spacy.load("en_core_web_sm", disable=['ner', 'morphologizer', 'tok2vec', 'attribute_ruler'])
         # Used to check Spacy pipes that are needed and loaded
         #print (self.nlp.pipe_names)
         
@@ -65,7 +65,7 @@ class NLP_Text_Preprocessor:
     
     # remove excess spaces
     def strip_extra_space(self, corpus):
-        return [re.sub(' +',' ',text) for text in corpus]
+        return [re.sub(' +',' ',text).strip() for text in corpus]
     
     # Method to replace stopwords and apply the dictionary for each text in the corpus
     def apply_stopwords_dictionary(self, corpus):
@@ -73,23 +73,43 @@ class NLP_Text_Preprocessor:
     
     # Method to lemmatize the corpus
     ### Struct Colocar suas melhorias aqui!!!
+    ### Pode ser necessário ativar os módulos do spacy que estão desativados por conta de performance
     def lemmatizer(self, corpus):
-        return [' '.join([tok.lemma_ for tok in doc if (tok.pos_ == 'VERB' or tok.pos_ == 'NOUN' or tok.pos_ == 'ADJ')]) 
-                for doc in self.nlp.pipe(corpus, batch_size=10000, n_process=1, disable=['ner', 'tok2vec'])]
+      
+        return [' '.join([tok.lemma_ for tok in doc]) for doc in self.nlp.pipe(corpus, batch_size=10000, n_process=1, disable=['ner', 'morphologizer', 'tok2vec', 'attribute_ruler'])]
+        #return [' '.join([tok.lemma_ for tok in doc if (tok.pos_ == 'VERB' or tok.pos_ == 'NOUN' or tok.pos_ == 'ADJ')]) 
+        #        for doc in self.nlp.pipe(corpus, batch_size=10000, n_process=1, disable=['ner', 'tok2vec'])]
 
     
     # Make data prep for modeling, pre process and NLP
     def preprocess(self, corpus):
-        print('NLP Pre Process Time: ')
+        
         start = time.time()
         corpus = self.lower_text(corpus)
+        #print(corpus)
         corpus = self.remove_accent(corpus)
+        #print(corpus)
         ### Testar qualidade do modelo sem isso
         corpus = self.clean_text(corpus)
+        #print(corpus)
         corpus = self.apply_stopwords_dictionary(corpus)
+        #print(corpus)
         corpus = self.strip_extra_space(corpus)
-        corpus = self.lemmatizer(corpus)
+        #print(corpus)
+        # corpus = self.lemmatizer(corpus)
+        #print(corpus)
         end = time.time()
-        print(end - start)
+        print(f'NLP Pre Process Time: {print(end - start)} seconds')
         
         return corpus 
+
+
+"""
+textos = ['I try to identify the holy symbol', 'I try to pick his pockets']
+
+pp = NLP_Text_Preprocessor()
+saida = pp.preprocess(textos)
+
+print(saida)
+
+"""

@@ -1,11 +1,8 @@
-# for NLP preprocessing
+# for basic operations
 import pandas as pd
-import re
-import spacy
-#from nltk.stem.snowball import SnowballStemmer
-from unidecode import unidecode
 import numpy as np
-from flashtext import KeywordProcessor
+import os
+import pickle
 
 # Model Train and Selection
 from sklearn.model_selection import train_test_split
@@ -70,65 +67,9 @@ class Model_Trainer:
         # Modeling parameters
         self.min_obs = 400          # minimun number of observations to sample a skill, otherwise oversample to min_obs
         
-        # Initialize NPL and stemmer
-        self.nlp = spacy.load("en_core_web_sm")
- #       self.stemmer = SnowballStemmer(language='english')
+        self.nlp = NLP_Classifier()
         
-         ### Stopwords
-        self.rpgai_stopwords = [
-                        #Common words
-                        "going", "right", "okay", "yeah", "want", "try", "gonna", "good", "yes", "look", "know", "way", "guy",
-                        "little", "check", "thin", "thing", "guys", "come", "roll", "let", "time", "got", "maybe", "think", 
-                        "fuck", "lot", "shit", "bit", "point",
-                        #PCs and NPCs Names
-                        "jester", "caleb", "nott", "fjord", "yasha", "beau", "matt", "sam", "travis", "marisha", "ashley", "laura", 
-                        "liam", "professor", "thaddeus", "taliesin", "mollymauk", "grog", "pike"
-                        ]
-        
-         # Fast replace for multiples strings: stopwords and custom dictionary
-        self.keyword_processor = KeywordProcessor()
-        # Stopwords
-        for word in self.rpgai_stopwords:
-            self.keyword_processor.add_keyword(word, ' ')
-                
         pass
-
-    # Cleans text from processing and tokenizing
-    def clean_text(self, text):
-        t = text.lower()
-        t = unidecode(t)
-        # t.encode("ascii")  
-        t = re.sub(r'[^a-z]', ' ', t)           #Remove nonalpha
-        #t = re.sub(r'\s[^a-z]\s', ' ', t)       #Remove nonalpha >> check if is really necessary!?!?
-        t = re.sub(r"\b[a-z]{1,2}\b", ' ', t)   #Remove words with 1 or 2 letters
-        t = re.sub(' +', ' ', t)                #Remove extra spaces
-        t = t.strip()                           #Remove leading and trailing spaces
-        return t
-    
-    # Method to replace stopwords and apply the dictionary for each text
-    def apply_stopwords_dictionary(self, text):
-        return self.keyword_processor.replace_keywords(text)
-    
-    # NLP Pre process
-    def nlp_preprocess(self, text):
-        
-        #tokens = []
-        lemmas = []
-        #stemms = []
-        
-        text = self.apply_stopwords_dictionary(text)
-        
-        doc = self.nlp(text)
-        
-        for token in doc:
-            if not token.is_stop: 
-                if (token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ'):
-                    #tokens.append(token.text)
-                    lemmas.append(token.lemma_)
-                    #stemms.append(self.stemmer.stem(token.text))
-        
-        #return self.clean_text(' '.join(tokens)), self.clean_text(' '.join(stemms)), self.clean_text(' '.join(lemmas))
-        return self.clean_text(' '.join(lemmas))
 
     # Plot a confusion matrix
     def plot_confusion_matrix(self, title, reals, predictions):
@@ -137,6 +78,7 @@ class Model_Trainer:
         ax.set_title(title)
         ax.set_ylabel('Real')
         ax.set_xlabel('Predicted')
+
 
     # Load data for modeling
     def data_load(self):
@@ -178,29 +120,10 @@ class Model_Trainer:
             df_sample = df_sample.append(df_skill).reset_index(drop=True)
                 
         return df_sample
-    
-    
-    # Make data prep for modeling, pre process and NLP
-    def data_prep(self, df):
-        
-        # Drop non mapped skills
-        df = df[df.skill.isin(self.lst_skills)].copy().reset_index(drop=True)
 
-        # Check data distribution per skill
-        print(df.skill.value_counts())
-        
-        """
-        Start NLP Pre Process
-        """
-        
-        # Do NLP pre process in a single step
-        #df['token_text'], df['stemm_text'], df['lemma_text'] = zip(*df['backward_text'].map(self.nlp_preprocess))
-        df['lemma_text'] = df['backward_text'].apply(self.nlp_preprocess)
-        
-        return df
     
     # Method to create a classification model
-    def train_skill_classification(self):
+    def train_skill_classification(self, path_models):
         time_ini = time.time()
         print("Data Load")
         df = self.data_load()
@@ -209,23 +132,28 @@ class Model_Trainer:
         
         time_ini = time.time()
         print("Data Prep")
-        df = self.data_prep(df)
+        # Drop non mapped skills
+        df = df[df.skill.isin(self.lst_skills)].copy().reset_index(drop=True)
+
+        # Check data distribution per skill
+        print(df.skill.value_counts())
+        
         time_end = time.time()
         print(f"Time for Data Prep: {time_end - time_ini} seconds")
         
+
         # Used for debug of NLP pre processing
         #df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
 
-        """
-        SET HERE THE TEXT TO BE USED IN MODEL TRAINING
-        """
-        df['train_text'] = df['lemma_text']
+        # Drop empty texts before NLP processing
+        df_train = df[['skill', 'backward_text']].copy().reset_index(drop = True)
+        df_train['backward_text'].replace('', np.nan, inplace=True)
+        df_train.dropna(subset=['backward_text'], inplace=True)
 
-        # Drop empty texts after NLP pre processing
-        df_train = df[['skill', 'train_text']].copy()
-        df_train['train_text'].replace('', np.nan, inplace=True)
-        df_train.dropna(subset=['train_text'], inplace=True)
-        
+        # Do NLP pre process in a single step
+        #df['token_text'], df['stemm_text'], df['lemma_text'] = zip(*df['backward_text'].map(self.nlp_preprocess))
+        df['lemma_text'] = df['backward_text'].apply(self.nlp_preprocess)
+  
         time_ini = time.time()
         print("Data Leveler")        
         # Do an oversampling to get better samples for prediction
@@ -234,18 +162,17 @@ class Model_Trainer:
         time_end = time.time()
         print(f"Time for Data Leveler: {time_end - time_ini} seconds")
         
-        ### Usar dicionário de termos sinônimos?!?!
-        
+
         time_ini = time.time()
-        print("BOW & TFIDF")        
+        print("NLP")        
         # Bag of words + tf-idf
-        vectorizer = TfidfVectorizer(analyzer = 'word', max_df = 0.90, min_df = 3, ngram_range=(1, 2), stop_words=self.rpgai_stopwords)
-        bow_tfidf = vectorizer.fit_transform(df_estrat['train_text'])
+        bow_tfidf = self.nlp.create_TFIDF_Vec_model(df_estrat['backward_text'].tolist(), path_models)
+
         time_end = time.time()
         print(f"Time for BOW & TFIDF: {time_end - time_ini} seconds")
                 
         # split data for train and test
-        ### Montar dataset de validação
+
         time_ini = time.time()
         print("Train and Test Split")        
         X_train, X_test, y_train, y_test = train_test_split(bow_tfidf, df_estrat['skill'], test_size=0.05, random_state = 42)
@@ -261,6 +188,11 @@ class Model_Trainer:
         #clf.probability=True
         clf = RandomForestClassifier(n_estimators=200)
         clf = clf.fit(X_train, y_train)
+        
+         # Save model to disk
+        filename = os.path.join(path_models, 'model.sav')
+        pickle.dump(clf, open(filename, 'wb'))
+        
         time_end = time.time()
         print(f"Time for Train Model: {time_end - time_ini} seconds")
         
@@ -281,8 +213,10 @@ class Model_Trainer:
         # Get validation metrics
         print("")
         print("Validation:")
-        y_val = clf.predict(vectorizer.transform(df['train_text']))
-        df['pred_skill'] = y_val
+
+        y_val = clf.predict(self.nlp.use_TFIDF_Vec_model(df_train['backward_text'].tolist(), path_models))
+        df_train['pred_skill'] = y_val
+
         print(confusion_matrix(df['skill'], y_val))
         print(f"Validation Accuracy: {metrics.accuracy_score(df['skill'], y_val):.2%}")
         print(f"Validation Precision: {metrics.precision_score(df['skill'], y_val, average='macro'):.2%}")
@@ -293,8 +227,27 @@ class Model_Trainer:
         
 
 """
+import os
+import sys
+
+# Create platform independent import path
+# Need to point to the folder that contains the /classifier files
+path_pipe = os.path.join(os.path.abspath(os.sep), 'app', 'rpgai', 'classifier')
+
+# Append path to sys path
+sys.path.append(path_pipe)
+
+def root_path():
+    return os.path.abspath(os.sep)
+
+def folder(*args):
+    return os.path.join(root_path(), *args)
+
+# Caminho do parquet com as guias
+path_models = folder('app', 'rpgai', 'classifiers', 'models')
+
 mt = Model_Trainer()
-mt.train_skill_classification()
+mt.train_skill_classification(path_models)
 
 """
 

@@ -1,10 +1,8 @@
-# for NLP preprocessing
+# for basic operations
 import pandas as pd
-import re
-import spacy
-from nltk.stem.snowball import SnowballStemmer
-from unidecode import unidecode
 import numpy as np
+import os
+import pickle
 
 # Model Train and Selection
 from sklearn.model_selection import train_test_split
@@ -27,179 +25,227 @@ import matplotlib.pyplot as plt
 from joblib import dump
 from sklearn.pipeline import Pipeline
 
+# To get processing time
+import time
+
+from NLP_Classifier import NLP_Classifier
+
+class Model_Trainer:
+   
+    # Class Initialization
+    def __init__(self):
+        
+        # Skills to be identified
+        self.lst_skills = [
+                            'Acrobatics',
+                            'Animal Handling',
+                            'Arcana',
+                            'Athletics',
+                            'Deception',
+                            'History',
+                            'Insight',
+                            'Intimidation',
+                            'Investigation',
+                            'Medicine',
+                            'Nature',
+                            'Perception',
+                            'Performance',
+                            'Persuasion',
+                            'Religion',
+                            'Sleight of Hand',
+                            'Stealth',
+                            'Survival'
+                            ]
+        
+        # data sources
+        self.CR_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.csv'
+        self.TK_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv'
+        self.SS_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/skill_db.csv'
+        self.GP_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/podcasts/general_podcasts.csv'
+        
+        # data to be used
+        self.fields_to_use = {'skill', 'backward_text'}
+        
+        # Modeling parameters
+        self.min_obs = 400          # minimun number of observations to sample a skill, otherwise oversample to min_obs
+        
+        self.nlp = NLP_Classifier()
+        
+        pass
+
+    # Plot a confusion matrix
+    def plot_confusion_matrix(self, title, reals, predictions):
+        ax = plt.axes()
+        sns.heatmap(confusion_matrix(reals, predictions), xticklabels=self.lst_skills, yticklabels=self.lst_skills, ax=ax)
+        ax.set_title(title)
+        ax.set_ylabel('Real')
+        ax.set_xlabel('Predicted')
 
 
-# Cleans text from processing and tokenizing
-def clean_text(text):
-    text = text.lower()
-    t = unidecode(text)
-    t.encode("ascii")  
-    t = re.sub(r'[^a-z]', ' ', t)           #Remove nonalpha
-    t = re.sub(r'\s[^a-z]\s', ' ', t)       #Remove nonalpha >> check if is really necessary!?!?
-    t = re.sub(r"\b[a-z]{1,2}\b", ' ', t)   #Remove words with 1 or 2 letters
-    t = re.sub(' +', ' ', t)                #Remove extra spaces
-    t = t.strip()                           #Remove leading and trailing spaces
-    return t
+    # Load data for modeling
+    def data_load(self):
+        df_critical_role = pd.read_csv(self.CR_url, usecols=self.fields_to_use)
+        # df_tavern_keeper_5e = pd.read_csv(self.TK_url, usecols=self.fields_to_use)
+        df_skill_sheet = pd.read_csv(self.SS_url, usecols=self.fields_to_use)
+        df_general_podcast = pd.read_csv(self.GP_url, usecols=self.fields_to_use)
 
-# NLP Pre process
-def nlp_preprocess(text):
+        # Flag data source
+        df_critical_role['origin'] = 'CR'
+        #df_tavern_keeper_5e['origin'] = 'TK'
+        df_skill_sheet['origin'] = 'SS'
+        df_general_podcast['origin'] = 'GP'
+
+        # Append all dataframes
+        list_df = [df_critical_role, df_skill_sheet, df_general_podcast]
+        df = df_skill_sheet.append(list_df, ignore_index=True)
+        
+        return df
     
-    tokens = []
-    lemmas = []
-    stemms = []
-
-    doc = nlp(text)
     
-    for token in doc:
-        if not token.is_stop: 
-            if (token.pos_ == 'VERB' or token.pos_ == 'NOUN' or token.pos_ == 'ADJ'):
-                tokens.append(token.text)
-                lemmas.append(token.lemma_)
-                stemms.append(stemmer.stem(token.text))
+    # Try to make the the training data more homogeneous
+    def data_leveler(self, df):
+        
+        df_sample = pd.DataFrame()
+        
+        for skill in self.lst_skills:
+            # Get number of observations for skill
+            num_obs = sum(df['skill'].values == skill)
+        
+            # Make a more homogeneous dataset for training
+            if num_obs > self.min_obs:
+                # If skill has more than min_obs, get a sample
+                df_skill = df[df['skill'].values == skill].sample(n = self.min_obs).reset_index(drop=True)
+            else:
+                # If skill has less than min_obs, do an oversample
+                df_skill = df[df['skill'].values == skill].sample(n = self.min_obs, replace=True).reset_index(drop=True)
+            
+            df_sample = df_sample.append(df_skill).reset_index(drop=True)
+                
+        return df_sample
+
     
-    return clean_text(' '.join(tokens)), clean_text(' '.join(stemms)), clean_text(' '.join(lemmas))
+    # Method to create a classification model
+    def train_skill_classification(self, path_models):
 
-def plot_confusion_matrix(title, reals, predictions):
-    ax = plt.axes()
-    sns.heatmap(confusion_matrix(reals, predictions), xticklabels=skills, yticklabels=skills, ax=ax)
-    ax.set_title(title)
-    ax.set_ylabel('Real')
-    ax.set_xlabel('Predicted')
+        # Data Loading
+        time_ini = time.time()
+        df = self.data_load()
+        time_end = time.time()
+        print(f"Time for Data Load: {time_end - time_ini} seconds")
+        
+        # Data Prep
+        time_ini = time.time()
+        # Drop non mapped skills
+        df = df[df.skill.isin(self.lst_skills)].copy().reset_index(drop=True)
 
+        # Check data distribution per skill
+        #print(df.skill.value_counts())
+                
+        # Used for debug of NLP pre processing
+        #df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
 
-# Skills to be identified
-skills = [
-    'Acrobatics',
-    'Animal Handling',
-    'Arcana',
-    'Athletics',
-    'Deception',
-    'History',
-    'Insight',
-    'Intimidation',
-    'Investigation',
-    'Medicine',
-    'Nature',
-    'Perception',
-    'Performance',
-    'Persuasion',
-    'Religion',
-    'Sleight of Hand',
-    'Stealth',
-    'Survival'
-    ]
+        # Drop empty texts before NLP processing
+        df_train = df[['skill', 'backward_text']].copy().reset_index(drop = True)
+        df_train['backward_text'].replace('', np.nan, inplace=True)
+        df_train.dropna(subset=['backward_text'], inplace=True)
+        time_end = time.time()
+        print(f"Time for Data Prep: {time_end - time_ini} seconds")
 
-#data sources
-CR_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.csv'
-TK_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv'
-SS_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/skill_db.csv'
-GP_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/podcasts/general_podcasts.csv'
+        # Data leveler to make training data more homogeneous
+        time_ini = time.time()
+        # Do an oversampling to get better samples for prediction
+        df_estrat = self.data_leveler(df_train)
+        time_end = time.time()
+        print(f"Time for Data Leveler: {time_end - time_ini} seconds")
+        
+        # NLP processing
+        time_ini = time.time()
+        # Bag of words + tf-idf
+        bow_tfidf = self.nlp.create_TFIDF_Vec_model(df_estrat['backward_text'].tolist(), path_models)
+        time_end = time.time()
+        print(f"Time for BOW & TFIDF (include NLP Pre Process): {time_end - time_ini} seconds")
+                
+        # split data for train and test
+        time_ini = time.time()
+        X_train, X_test, y_train, y_test = train_test_split(bow_tfidf, df_estrat['skill'], test_size=0.05, random_state = 42)
+        time_end = time.time()
+        print(f"Time for Train and Test Split: {time_end - time_ini} seconds")
 
-#data to be used
-fields = {'skill', 'backward_text'}
+        # Train model        
+        time_ini = time.time()
+        #clf = LinearSVC()
+        #clf = XGBClassifier(objective = 'binary:logistic')
+        clf = SVC() 
+        clf.probability=True
+        #clf = RandomForestClassifier(n_estimators=200)
+        clf = clf.fit(X_train, y_train)
+        
+         # Save model to disk
+        filename = os.path.join(path_models, 'model.sav')
+        pickle.dump(clf, open(filename, 'wb'))
+        
+        time_end = time.time()
+        print(f"Time for Model Training: {time_end - time_ini} seconds")
+        
+        # Score train and test data
+        time_ini = time.time()
+        y_pred = clf.predict(X_test)
+        time_end = time.time()
+        print(f"Time for Predict: {time_end - time_ini} seconds")
+        
+        # Get Train / Test Metrics
+        print("")
+        print("Train / Test:")
+        print(f"Accuracy: {metrics.accuracy_score(y_test, y_pred):.2%}")
+        print(f"Precision: {metrics.precision_score(y_test, y_pred, average='macro'):.2%}")
+        print(confusion_matrix(y_test, y_pred))
+        #plot_confusion_matrix('Train / Test', y_test, y_pred)
 
-df_critical_role = pd.read_csv(CR_url, usecols=fields)
-df_tavern_keeper_5e = pd.read_csv(TK_url, usecols=fields)
-df_skill_sheet = pd.read_csv(SS_url, usecols=fields)
-df_general_podcast = pd.read_csv(GP_url, usecols=fields)
+        # Get validation metrics
+        print("")
+        print("Validation:")
 
-# Flag data source
-df_critical_role['origin'] = 'CR'
-df_tavern_keeper_5e['origin'] = 'TK'
-df_skill_sheet['origin'] = 'SS'
-df_general_podcast['origin'] = 'GP'
+        y_val = clf.predict(self.nlp.use_TFIDF_Vec_model(df_train['backward_text'].tolist(), path_models))
+        df_train['pred_skill'] = y_val
+
+        print(confusion_matrix(df['skill'], y_val))
+        print(f"Validation Accuracy: {metrics.accuracy_score(df['skill'], y_val):.2%}")
+        print(f"Validation Precision: {metrics.precision_score(df['skill'], y_val, average='macro'):.2%}")
+        self.plot_confusion_matrix('Validation', df['skill'], y_val)
+        
+        path_data = 'C:\\app\\rpgai\\data\\Dados_Teste.parquet'
+        df_train.to_parquet(path_data, index=False)
+        
 
 """
-DEBUG - Alguma fonte de dados está zoada!!!
-df_tavern_keeper_5e >> Está com dados zoados >> prejudica o modelo
-df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
-"""
-# Append all dataframes
-list_df = [df_critical_role, df_skill_sheet, df_general_podcast]
-df = df_skill_sheet.append(list_df, ignore_index=True)
+import os
+import sys
 
-# Drop non mapped skills
-df = df[df.skill.isin(skills)]
+# Create platform independent import path
+# Need to point to the folder that contains the /classifier files
+path_pipe = os.path.join(os.path.abspath(os.sep), 'app', 'rpgai', 'classifier')
 
-# Check data distribution per skill
-df.skill.value_counts()
+# Append path to sys path
+sys.path.append(path_pipe)
 
-"""
-Start NLP Pre Process
-"""
-nlp = spacy.load("en_core_web_sm")
-stemmer = SnowballStemmer(language='english')
+def root_path():
+    return os.path.abspath(os.sep)
 
-# Do NLP pre process in a single step
-df['token_text'], df['stemm_text'], df['lemma_text'] = zip(*df['backward_text'].map(nlp_preprocess))
+def folder(*args):
+    return os.path.join(root_path(), *args)
 
-# Used for debug of NLP pre processing
-#df_DEBUG = df.groupby('skill').apply(pd.DataFrame.sample, n=5, replace=True).reset_index(drop=True)
+# Caminho do parquet com as guias
+path_models = folder('app', 'rpgai', 'classifiers', 'models')
+
+mt = Model_Trainer()
+mt.train_skill_classification(path_models)
 
 """
-SET HERE THE TEXT TO BE USED IN MODEL TRAINING
-"""
-df['train_text'] = df['lemma_text']
-
-# Drop empty texts after NLP pre processing
-df_train = df[['skill', 'train_text']].copy()
-df_train['train_text'].replace('', np.nan, inplace=True)
-df_train.dropna(subset=['train_text'], inplace=True)
-
-# Do an oversampling to get better samples for prediction
-df_estrat = df_train.groupby('skill').apply(pd.DataFrame.sample, n=400, replace=True).reset_index(drop=True)
-
-### Usar dicionário de termos sinônimos?!?!
-
-### Stopwords
-new_stopwords = [
-                #Common words
-                "going", "right", "okay", "yeah", "want", "try", "gonna", "good", "yes", "look", "know", "way", "guy",
-                "little", "check", "thin", "thing", "guys", "come", "roll", "let", "time", "got", "maybe", "think", 
-                "fuck", "lot", "shit", "bit", "point",
-                #PCs and NPCs Names
-                "jester", "caleb", "nott", "fjord", "yasha", "beau", "matt", "sam", "travis", "marisha", "ashley", "laura", 
-                "liam", "professor", "thaddeus", "taliesin", "mollymauk", "grog", "pike"
-                ]
-
-
-# Bag of words + tf-idf
-vectorizer = TfidfVectorizer(analyzer = 'word', max_df = 0.90, min_df = 3, ngram_range=(1, 2), stop_words=new_stopwords)
-bow_tfidf = vectorizer.fit_transform(df_estrat['train_text'])
-
-# split data for train and test
-### Montar dataset de validação
-X_train, X_test, y_train, y_test = train_test_split(bow_tfidf, df_estrat['skill'], test_size=0.05, random_state = 42)
-
-# Train Model
-#clf = LinearSVC()
-#clf = XGBClassifier(objective = 'binary:logistic')
-#clf = SVC() 
-#clf.probability=True
-clf = RandomForestClassifier(n_estimators=200)
-clf = clf.fit(X_train, y_train)
-y_pred = clf.predict(X_test)
-
-# Get Train / Test Metrics
-print("")
-print("Train / Test:")
-print(f"Accuracy: {metrics.accuracy_score(y_test, y_pred):.2%}")
-print(f"Precision: {metrics.precision_score(y_test, y_pred, average='macro'):.2%}")
-print(confusion_matrix(y_test, y_pred))
-#plot_confusion_matrix('Train / Test', y_test, y_pred)
-
-# Get validation metrics
-print("")
-print("Validation:")
-y_val = clf.predict(vectorizer.transform(df['train_text']))
-print(confusion_matrix(df['skill'], y_val))
-print(f"Validation Accuracy: {metrics.accuracy_score(df['skill'], y_val):.2%}")
-print(f"Validation Precision: {metrics.precision_score(df['skill'], y_val, average='macro'):.2%}")
-plot_confusion_matrix('Validation', df['skill'], y_val)
 
 
 """
 Check some cases to analyze the model
+"""
 """
 skill_dict = {
             "acrobatics" : "you tumble the strike"
@@ -221,9 +267,10 @@ skill_dict = {
             ,"stealth" : "Come out that side and then get up into the ring, behind the barrel as cover, and then attack the guy that way."
             ,"survival" : "The atmosphere is breaking his concentration on his main task of checking around the party for travelling advantages...!"
             }
-
+"""
 """
 REMEMBER TO USE THE SAME TEXT THAT WAS USED TO TRAIN THE MODEL!!!
+"""
 """
 def check_for_skill(skill_name, skill, n):
     tokens, stemms, lemmas = nlp_preprocess(skill)
@@ -248,16 +295,19 @@ for skill in skill_dict:
     skill_to_check = check_for_skill(skill, skill_dict[skill], 3)
 
 """
+"""
 To check a single text
+"""
 """
 skill_real = 'Acrobatics'
 text = 'I do a back somersault to avoid being hit'
 skill_dict = {skill_real : text}
 check_for_skill(skill_real, skill_dict[skill_real], 3)
 
-
+"""
 """
 Wordcloud using tfidf features
+"""
 """
 ### Melhorar isso aqui
 # The data frame needs the skill and train_text columns
@@ -271,6 +321,7 @@ def wordcloud(text):
 
 wordcloud(' '.join(df1['text']))
 
+"""
 
 def run_pipeline():
     pipeline = Pipeline(steps= [('tfidf', TfidfVectorizer(analyzer = 'word', max_df = 0.90, min_df = 3,
@@ -281,3 +332,4 @@ def run_pipeline():
 
     # dump the pipeline model
     dump(pipeline, filename='text_classification.joblib')
+

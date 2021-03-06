@@ -75,9 +75,6 @@ class NLP_Text_Preprocessor:
     ### Struct Colocar suas melhorias aqui!!!
     ### Pode ser necessário ativar os módulos do spacy que estão desativados por conta de performance
     def lemmatizer(self, corpus):
-        processed_tokenized_data = []
-        processed_doc_text = []
-        entities_obs = []
         entity_unwanted_types = set([
             'PERSON', 'ORG', 'DATE', 'CARDINAL',
             'ORDINAL', 'TIME', "GPE", "QUANTITY"
@@ -86,28 +83,21 @@ class NLP_Text_Preprocessor:
             ["PROPN", "NOUN", "ADV", "ADJ", "VERB"]
         )
 
-        tokenized_data = [
-            doc for doc in self.nlp.pipe(corpus, batch_size=10000, n_process=1)
+        processed_tokenized_data = [
+            " ".join([
+                token.norm_ for token in document_tokens
+                # Entity related filtering
+                if not token.ent_type_ or
+                token.ent_type_ not in entity_unwanted_types
+                # POS related filtering
+                and str(token.pos_) in allowed_pos_set
+            ])
+            for document_tokens in self.nlp.pipe(
+                corpus, batch_size=10000, n_process=1
+            )
         ]
-        for doc in tokenized_data:
-            processed_doc = []
-            for token in doc:
-                if not token.ent_type_:
-                    processed_doc.append(token)
-                elif token.ent_type_ not in entity_unwanted_types:
-                    processed_doc.append(token)
 
-            processed_tokenized_data.append(processed_doc)
-
-        processed_doc = []
-        for doc in processed_tokenized_data:
-            doc_tokens = [
-                word.norm_ for word in doc if str(word.pos_) in allowed_pos_set
-            ]
-            print(doc_tokens)
-            processed_doc.append(" ".join(doc_tokens))
-
-        return processed_doc
+        return processed_tokenized_data
         #return [' '.join([tok.lemma_ for tok in doc if (tok.pos_ == 'VERB' or tok.pos_ == 'NOUN' or tok.pos_ == 'ADJ')]) 
         #        for doc in self.nlp.pipe(corpus, batch_size=10000, n_process=1, disable=['ner', 'tok2vec'])]
 

@@ -19,7 +19,7 @@ class NLP_Text_Preprocessor:
     def __init__(self):
         
          # Initialize NPL and stemmer
-        self.nlp = spacy.load("en_core_web_sm", disable=['ner', 'morphologizer', 'tok2vec', 'attribute_ruler'])
+        self.nlp = spacy.load("en_core_web_sm")
         # Used to check Spacy pipes that are needed and loaded
         #print (self.nlp.pipe_names)
         
@@ -75,8 +75,39 @@ class NLP_Text_Preprocessor:
     ### Struct Colocar suas melhorias aqui!!!
     ### Pode ser necessário ativar os módulos do spacy que estão desativados por conta de performance
     def lemmatizer(self, corpus):
-      
-        return [' '.join([tok.lemma_ for tok in doc]) for doc in self.nlp.pipe(corpus, batch_size=10000, n_process=1, disable=['ner', 'morphologizer', 'tok2vec', 'attribute_ruler'])]
+        processed_tokenized_data = []
+        processed_doc_text = []
+        entities_obs = []
+        entity_unwanted_types = set([
+            'PERSON', 'ORG', 'DATE', 'CARDINAL',
+            'ORDINAL', 'TIME', "GPE", "QUANTITY"
+        ])
+        allowed_pos_set = set(
+            ["PROPN", "NOUN", "ADV", "ADJ", "VERB"]
+        )
+
+        tokenized_data = [
+            doc for doc in self.nlp.pipe(corpus, batch_size=10000, n_process=1)
+        ]
+        for doc in tokenized_data:
+            processed_doc = []
+            for token in doc:
+                if not token.ent_type_:
+                    processed_doc.append(token)
+                elif token.ent_type_ not in entity_unwanted_types:
+                    processed_doc.append(token)
+
+            processed_tokenized_data.append(processed_doc)
+
+        processed_doc = []
+        for doc in processed_tokenized_data:
+            doc_tokens = [
+                word.norm_ for word in doc if str(word.pos_) in allowed_pos_set
+            ]
+            print(doc_tokens)
+            processed_doc.append(" ".join(doc_tokens))
+
+        return processed_doc
         #return [' '.join([tok.lemma_ for tok in doc if (tok.pos_ == 'VERB' or tok.pos_ == 'NOUN' or tok.pos_ == 'ADJ')]) 
         #        for doc in self.nlp.pipe(corpus, batch_size=10000, n_process=1, disable=['ner', 'tok2vec'])]
 
@@ -96,7 +127,7 @@ class NLP_Text_Preprocessor:
         #print(corpus)
         corpus = self.strip_extra_space(corpus)
         #print(corpus)
-        # corpus = self.lemmatizer(corpus)
+        corpus = self.lemmatizer(corpus)
         #print(corpus)
         end = time.time()
         print(f'NLP Pre Process Time: {end - start} seconds')
@@ -104,12 +135,10 @@ class NLP_Text_Preprocessor:
         return corpus 
 
 
-"""
+
 textos = ['I try to identify the holy symbol', 'I try to pick his pockets']
 
 pp = NLP_Text_Preprocessor()
 saida = pp.preprocess(textos)
 
 print(saida)
-
-"""

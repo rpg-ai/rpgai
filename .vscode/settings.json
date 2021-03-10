@@ -1,3 +1,4 @@
 {
-    "jupyter.jupyterServerType": "local"
+    "jupyter.jupyterServerType": "remote",
+    "python.pythonPath": "/home/dev/anaconda3/envs/rpgai2/bin/python"
 }

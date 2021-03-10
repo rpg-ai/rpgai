@@ -9,7 +9,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
 from sklearn.svm import SVC
-from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import metrics
 from sklearn.metrics import confusion_matrix
@@ -213,8 +212,8 @@ class Model_Trainer:
         print(f"Validation Precision: {metrics.precision_score(df['skill'], y_val, average='macro'):.2%}")
         self.plot_confusion_matrix('Validation', df['skill'], y_val)
         
-        path_data = 'C:\\app\\rpgai\\data\\Dados_Teste.parquet'
-        df_train.to_parquet(path_data, index=False)
+        path_data = '../data/Dados_Teste'
+        df_train.to_csv(path_data, index=False)
         
 
 """

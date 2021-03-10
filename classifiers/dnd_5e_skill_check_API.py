@@ -76,7 +76,7 @@ def add_message(uuid):
     
     ### Verificar o que e como (formato) que vai retornar, se for um JSON, precisa dar um tapa
     
-    return ??????
+    return None
 
 if __name__ == '__main__':
     app.run(host= '0.0.0.0',debug=True)

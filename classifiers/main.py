@@ -4,6 +4,7 @@ import pickle
 
 import pandas as pd
 import numpy as np
+from sklearn.metrics import f1_score
 
 import dnd_5e_checks
 from NLP_Classifier import NLP_Classifier
@@ -76,4 +77,33 @@ predicted_classes_list = [
 for y_true, y_pred in zip(y_true_list, predicted_classes_list):
     print(f1_score(y_true, y_pred, average='micro'))
 
+# %%
+predicted_winner_class_and_confidence_list = [
+    [(classes[np.argmax(predicted_row)], np.max(predicted_row))
+        for predicted_row in predicted_probabilities]
+    for predicted_probabilities in predicted_probabilities_for_classes_list]
+
+# %%
+score_list = []
+for y_true_list, y_pred_and_confidence_list in zip(
+        y_true_list, predicted_winner_class_and_confidence_list):
+    score_column = []
+    for y_true, (y_pred, confidence) in zip(
+            y_true_list, y_pred_and_confidence_list):
+        if y_true == y_pred:
+            score_column.append(confidence)
+        else:
+            score_column.append(confidence * -1)
+    score_list.append(score_column)
+# %%
+for df, score_column in zip(df_list, score_list):
+    df['row_score'] = score_column
+
+# %%
+df_list[0].to_csv("../data/critical_role")
+# %%
+df_list[1].to_csv("../data/general_podcasts")
+
+# %%
+df_list[2].to_csv("../data/tavern_keeper")
 # %%

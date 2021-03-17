@@ -7,12 +7,17 @@ Created on Fri Mar  5 09:35:57 2021
 # Base Packages
 import pickle
 import os
+import pandas as pd
 
 # Vectorizer for dictionary
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # NLP Pre processing
 from NLP_Text_Preprocessor import NLP_Text_Preprocessor 
+
+# NLP Doc2Vec
+from gensim.models.doc2vec import Doc2Vec
+from nltk.tokenize import word_tokenize
 
 
 class NLP_Classifier:
@@ -58,3 +63,15 @@ class NLP_Classifier:
         bow_tfidf = tfidf_vec.transform(clean_text)
         
         return bow_tfidf
+    
+    
+    # Used to score data using NLP from a Doc2Vec pre trained model
+    def Nlp_Doc2Vec(self, corpus, path_models):
+        
+        path = os.path.join(path_models, "doc2vec.model")
+        model= Doc2Vec.load(path)
+        
+        # Call NLP pre processing
+        clean_text = self.NLP_pp.preprocess(corpus)       
+        
+        return pd.DataFrame([model.infer_vector(word_tokenize(x)) for x in clean_text])

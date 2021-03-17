@@ -175,9 +175,9 @@ class Model_Trainer:
         time_ini = time.time()
         #clf = LinearSVC()
         #clf = XGBClassifier(objective = 'binary:logistic')
-        clf = SVC() 
-        clf.probability=True
-        #clf = RandomForestClassifier(n_estimators=200)
+        #clf = SVC() 
+        #clf.probability=True
+        clf = RandomForestClassifier(n_estimators=200)
         clf = clf.fit(X_train, y_train)
         
          # Save model to disk

@@ -16,8 +16,7 @@ from sklearn.metrics import confusion_matrix
 # For graphics - Confusion Matrix
 import seaborn as sns
 
-# for wordcloud analysis
-from wordcloud import WordCloud
+
 import matplotlib.pyplot as plt
 
 #for model serialize
@@ -53,9 +52,10 @@ class Model_Trainer:
                             'Religion',
                             'Sleight of Hand',
                             'Stealth',
-                            'Survival'
+                            'Survival',
+
                             ]
-        
+
         # data sources
         self.CR_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/critical_role/skills_dataset.csv'
         self.TK_url = 'https://raw.githubusercontent.com/amiapmorais/datasets/master/tavern_keeper/skills_dataset.csv'
@@ -99,7 +99,7 @@ class Model_Trainer:
         df = df_skill_sheet.append(list_df, ignore_index=True)
         
         return df
-    
+        
     
     # Try to make the the training data more homogeneous
     def data_leveler(self, df):
@@ -124,11 +124,12 @@ class Model_Trainer:
 
     
     # Method to create a classification model
-    def train_skill_classification(self, path_models):
+    def train_skill_classification(self, path_models, df=None):
 
         # Data Loading
         time_ini = time.time()
-        df = self.data_load()
+        if df is None:
+            df = self.data_load()
         time_end = time.time()
         print(f"Time for Data Load: {time_end - time_ini} seconds")
         

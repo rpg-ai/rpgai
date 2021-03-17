@@ -107,3 +107,51 @@ df_list[1].to_csv("../data/general_podcasts")
 # %%
 df_list[2].to_csv("../data/tavern_keeper")
 # %%
+dataframe = pd.concat(df_list)
+mask = dataframe['row_score'] > 0
+dataframe = dataframe[mask].info()
+# %%
+classifier_model.train_skill_classification(PATH_DIR_MODELS, dataframe)
+
+# %%
+dataframe = pd.concat(df_list)
+mask = dataframe['row_score'] > -0.2
+dataframe = dataframe[mask].info()
+# %%
+classifier_model.train_skill_classification(PATH_DIR_MODELS, dataframe)
+
+# %%
+dataframe = pd.concat(df_list)
+mask = dataframe['row_score'] > 0.3
+dataframe = dataframe[mask].info()
+
+# %%
+classifier_model.train_skill_classification(PATH_DIR_MODELS, dataframe)
+
+# %%
+dataframe = pd.concat(df_list)
+mask = dataframe['row_score'] > 0.5
+dataframe = dataframe[mask].info()
+
+# %%
+classifier_model.train_skill_classification(PATH_DIR_MODELS, dataframe)
+
+# %%
+classifier_model.lst_skills.append('NoCheck')
+# %%
+dataframe = pd.concat(df_list)
+mask = dataframe['row_score'] < 0.3
+dataframe.loc[mask, 'skill'] = 'NoCheck'
+dataframe.info()
+# %%
+classifier_model.train_skill_classification(PATH_DIR_MODELS, dataframe)
+
+# %%
+dataframe = pd.concat(df_list[:2])
+mask = dataframe['row_score'] < 0.3
+dataframe.loc[mask, 'skill'] = 'NoCheck'
+dataframe.info()
+
+# %%
+classifier_model.train_skill_classification(PATH_DIR_MODELS, dataframe)
+
